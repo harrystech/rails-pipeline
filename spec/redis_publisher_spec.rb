@@ -9,10 +9,13 @@ describe RailsPipeline::RedisPublisher do
   end
 
   it "should publish message to Redis" do
-    Redis.any_instance.should_receive(:rpush).once { |instance, key, data|
+    Redis.any_instance.should_receive(:rpush).once { |instance, key, serialized_encrypted_data|
       key.should eql RailsPipeline::RedisPublisher.namespace
-      data.should_not be_nil
-      data.should include "encrypted"
+      encrypted_data = RailsPipeline::EncryptedMessage.parse(serialized_encrypted_data)
+      expect(encrypted_data.type_info).to eq(DefaultEmitter_1_0.to_s)
+      serialized_payload = DefaultEmitter.decrypt(encrypted_data)
+      data = DefaultEmitter_1_0.parse(serialized_payload)
+      expect(data.foo).to eq("baz")
       # message is encrypted, but we tested that in pipeline_emitter_spec
     }
     @default_emitter.emit

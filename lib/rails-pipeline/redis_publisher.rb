@@ -45,8 +45,7 @@ module RailsPipeline
     module InstanceMethods
       def publish(topic_name, data)
         t0 = Time.now
-        data["topic_name"] = topic_name
-        _redis.rpush(_key, data.to_json)
+        _redis.rpush(_key, data)
         t1 = Time.now
         RailsPipeline.logger.debug "Publishing to redis '#{topic_name}' took #{t1-t0}s"
       end

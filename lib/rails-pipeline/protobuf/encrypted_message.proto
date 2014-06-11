@@ -1,0 +1,9 @@
+package RailsPipeline;
+
+message EncryptedMessage {
+	required string salt = 1;
+    required string iv = 2;
+	required string ciphertext = 3;
+	optional string owner_info = 4; // e.g. user_id, if you store a key on the User
+	optional string type_info = 5; // ruby class name
+}

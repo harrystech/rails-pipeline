@@ -1,4 +1,7 @@
 
+require_relative "protobuf/default_emitter_1_0.pb"
+require_relative "protobuf/test_emitter_1_1.pb"
+require_relative "protobuf/test_emitter_2_0.pb"
 
 # Test data
 
@@ -29,22 +32,27 @@ class TestModel < ActiveRecord::Base
 
   # Implement a backwards-compatible versioned pipeline format
   def to_pipeline_1_1
-    data = to_pipeline_1_0
-    data["extra"] = "hi"
-    return data
+    TestEmitter_1_1.new(id: 1,
+                        foo: foo,
+                        extrah: "hi")
   end
 
   # Implement a non-backwards-compatible versioned pipeline format
   def to_pipeline_2_0
-    data = to_pipeline_1_0
-    data["extra"] = "hi"
-    data["foo"] = "modified_#{foo}"
+    TestEmitter_2_0.new(id: 1,
+                        foo: "modified_#{foo}",
+                        extra: "hi")
+  end
+
+  def kinda_attributes
+    data = attributes
+    data[:id] = 1
     return data
   end
 
 end
 
-# Class that will have default emitter
+# Class that will have v1.0 emitter
 class DefaultModel < ActiveRecord::Base
   has_no_table  # using activerecord-tableless gem
   include RailsPipeline::Emitter
@@ -53,6 +61,16 @@ class DefaultModel < ActiveRecord::Base
 
   def self.table_name
     "default_emitters"
+  end
+
+  def to_pipeline_1_0
+    DefaultEmitter_1_0.new(kinda_attributes)
+  end
+
+  def kinda_attributes
+    data = attributes
+    data[:id] = 1
+    return data
   end
 end
 

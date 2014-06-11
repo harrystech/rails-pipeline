@@ -28,9 +28,8 @@ describe RailsPipeline::Emitter do
     context "with only default version" do
         it "should produce all attributes" do
             data = @default_emitter.to_pipeline_1_0
-            data.length.should eql 1
-            data.has_key?("foo").should be_truthy
-            data["foo"].should eql "baz"
+            expect(data.foo).to eq("baz")
+            expect(data.class).to eq(DefaultEmitter_1_0)
         end
 
         it "should emit one version" do
@@ -39,23 +38,25 @@ describe RailsPipeline::Emitter do
         end
 
         it "should encrypt the payload" do
-            DefaultEmitter.should_receive(:symmetric_encrypt).once { |data|
-                data["pipeline_version"].should eql "1_0"
-                data["foo"].should eql "baz"
+            DefaultEmitter.should_receive(:encrypt).once { |data|
+              obj = DefaultEmitter_1_0.parse(data)
+              expect(obj.foo).to eq "baz"
             }
             @default_emitter.should_receive(:publish).once
             @default_emitter.emit
         end
 
         it "should have the correct encrypted payload" do
-            DefaultEmitter.should_receive(:symmetric_encrypt).once.and_call_original
+            DefaultEmitter.should_receive(:encrypt).once.and_call_original
             # Just verify that the right encrypted data gets sent to publish
-            @default_emitter.should_receive(:publish).once do |topic, data|
+            @default_emitter.should_receive(:publish).once do |topic, serialized_message|
                 topic.should eql "harrys-#{Rails.env}-v1-default_emitters"
-                cipher_text = data
-                cipher_text.should_not be_nil
-                data = DefaultEmitter.symmetric_decrypt(cipher_text)
-                data["foo"].should eql "baz"
+                message = RailsPipeline::EncryptedMessage.parse(serialized_message)
+                expect(message.type_info).to eq(DefaultEmitter_1_0.to_s)
+
+                plaintext = DefaultEmitter.decrypt(message)
+                obj = DefaultEmitter_1_0.parse(plaintext)
+                expect(obj.foo).to eq("baz")
             end
             @default_emitter.emit
         end
@@ -64,9 +65,8 @@ describe RailsPipeline::Emitter do
     context "with defined version" do
         it "should produce expected version when called explicitly" do
             data = @test_emitter.to_pipeline_1_1
-            data.length.should eql 2
-            data["foo"].should eql "bar"
-            data["extra"].should eql "hi"
+            data.foo.should eql "bar"
+            data.extrah.should eql "hi"
         end
 
         it "should emit multiple versions" do

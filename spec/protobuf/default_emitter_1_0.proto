@@ -1,0 +1,4 @@
+message DefaultEmitter__1__0 {
+  required int32 id = 1;
+  required string foo = 2;
+}

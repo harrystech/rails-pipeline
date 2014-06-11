@@ -21,16 +21,11 @@ module RailsPipeline
           topic = self.class.topic_name(version)
           RailsPipeline.logger.debug "Emitting to #{topic}"
           data = self.send("to_pipeline_#{version}")
-          data["pipeline_version"] = version
-          enc_data = self.class.symmetric_encrypt(data)
-          self.publish(topic, enc_data)
+          enc_data = self.class.encrypt(data.to_s, type_info: data.class.name)
+          self.publish(topic, enc_data.to_s)
         end
       end
 
-      # Default v1.0 emitter: emit all fields.
-      def to_pipeline_1_0
-        attributes
-      end
     end
 
     module ClassMethods

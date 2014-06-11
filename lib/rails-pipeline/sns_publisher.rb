@@ -29,7 +29,6 @@ module RailsPipeline::SnsPublisher
     def publish(topic_name, data)
       t0 = Time.now
       topic = _sns.topics[_topic_arn(topic_name)]
-      data = data.to_json
       topic.publish(data, subject: _subject, sqs: data)
       t1 = Time.now
       RailsPipeline.logger.debug "Published to SNS '#{topic_name}' in #{t1-t0}s"

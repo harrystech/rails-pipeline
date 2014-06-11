@@ -1,0 +1,5 @@
+message TestEmitter__2__0 {
+  required int32 id = 1;
+  required string foo = 2;
+  optional string extra = 3;
+}

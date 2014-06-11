@@ -7,10 +7,14 @@ describe RailsPipeline::IronmqPublisher do
   end
 
   it "should call post for IronMQ" do
-    allow_any_instance_of(IronMQ::Queue).to receive(:post) { |instance, json_data|
+    expect_any_instance_of(IronMQ::Queue).to receive(:post) { |instance, serialized_encrypted_data|
       expect(instance.name).to eq("harrys-#{Rails.env}-v1-default_emitters")
-      expect(json_data).to include("encrypted")
-    }
+      encrypted_data = RailsPipeline::EncryptedMessage.parse(serialized_encrypted_data)
+      expect(encrypted_data.type_info).to eq(DefaultEmitter_1_0.to_s)
+      serialized_payload = DefaultEmitter.decrypt(encrypted_data)
+      data = DefaultEmitter_1_0.parse(serialized_payload)
+      expect(data.foo).to eq("baz")
+    }.once
     @default_emitter.emit
   end
 
