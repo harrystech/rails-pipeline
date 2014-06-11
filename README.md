@@ -18,3 +18,8 @@ The Redis backend supports a forwarding system to a,cloud MQ like IronMQ.
 ## Forwarders
 
 ## Production Suggestions
+
+## Protocol Buffers
+
+   brew install protobuf
+   bundle exec ruby-protoc spec/protobuf/*.proto
