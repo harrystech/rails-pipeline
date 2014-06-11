@@ -1,9 +1,12 @@
 language: ruby
 rvm:
-  - 2.0.0
+- 2.0.0
+env:
+  global:
+    secure: Mcv+a9ATDnX1wVmP04H44jZVavPs8kSZW2OYDIa24pr4bVwrai6pArutbczHwhaEs5KPN5iP466RiYzf3t9X6ZqvIEuV9Z3Lr/tPGdyp4kmnPKk1te90y92qShbuxQBKVbpUAYcnK88SMXvy9XRXlurzVpow0b1fH7bPK+I7arE=
+  - secure: XNOAAi4l02PQS8F0pYLmv3GNbUzZed4/Mpzzv++3AGSApX4Hq/W9jpMxkHakBH4oUvvvnw5G4Xpa/EqhahZnlaTxVifzFBhMOr1mo6NxzQ1ZT6vCiAgY1lgWhpT9v2YYvT8W0bEhGWwrNyF7kdqWX3fje341C3KXakFELl5+Y2o=
 script: bundle exec rspec spec
 notifications:
-    hipchat:
-        rooms:
-            - secure: "cVvKnySyhAuBtAqXKwxsMamfjkGe63OldAdP4eSNv6syr0BNcJirfDN6OsH1bzAbvCq/lEK1udLDzPrEsP0S51zBG2tGaeY7pXeBhHigBGFmC6wsAfMtPkDTyursm6f6Orl0LrMB4RPTNi6RFXdKDvTk430NBjh8YgKkZ7EzBtg="
-
+  hipchat:
+    rooms:
+    - secure: cVvKnySyhAuBtAqXKwxsMamfjkGe63OldAdP4eSNv6syr0BNcJirfDN6OsH1bzAbvCq/lEK1udLDzPrEsP0S51zBG2tGaeY7pXeBhHigBGFmC6wsAfMtPkDTyursm6f6Orl0LrMB4RPTNi6RFXdKDvTk430NBjh8YgKkZ7EzBtg=
