@@ -9,7 +9,7 @@ describe RailsPipeline::RedisPublisher do
   end
 
   it "should publish message to Redis" do
-    Redis.any_instance.should_receive(:rpush).once { |instance, key, serialized_encrypted_data|
+    Redis.any_instance.should_receive(:lpush).once { |instance, key, serialized_encrypted_data|
       key.should eql RailsPipeline::RedisPublisher.namespace
       encrypted_data = RailsPipeline::EncryptedMessage.parse(serialized_encrypted_data)
       expect(encrypted_data.type_info).to eq(DefaultEmitter_1_0.to_s)

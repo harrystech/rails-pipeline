@@ -1,7 +1,7 @@
 # A Pipeline emitter is an active record model that, when changed,
 # will publish the changed fields to some sort of queue
 
-require_relative "./symmetric_encryptor"
+require "rails-pipeline/symmetric_encryptor"
 
 module RailsPipeline
   module Emitter

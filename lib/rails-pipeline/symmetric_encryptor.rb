@@ -36,7 +36,9 @@ module RailsPipeline
 
         # Do the encryption
         ciphertext = cipher.update(plaintext) + cipher.final
+        uuid = SecureRandom.uuid
         return RailsPipeline::EncryptedMessage.new(
+          uuid: uuid,
           salt: Base64.encode64(salt),
           iv: Base64.encode64(iv),
           ciphertext: Base64.encode64(ciphertext),

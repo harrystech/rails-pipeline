@@ -10,11 +10,12 @@ module RailsPipeline
   class EncryptedMessage < ::ProtocolBuffers::Message
     set_fully_qualified_name "RailsPipeline.EncryptedMessage"
 
-    required :string, :salt, 1
-    required :string, :iv, 2
-    required :string, :ciphertext, 3
-    optional :string, :owner_info, 4
-    optional :string, :type_info, 5
+    required :string, :uuid, 1
+    required :string, :salt, 2
+    required :string, :iv, 3
+    required :string, :ciphertext, 4
+    optional :string, :owner_info, 5
+    optional :string, :type_info, 6
   end
 
 end

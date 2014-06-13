@@ -35,6 +35,8 @@ module RailsPipeline
       def namespace
         @@namespace
       end
+
+
     end
 
     def self.included(base)
@@ -45,16 +47,19 @@ module RailsPipeline
     module InstanceMethods
       def publish(topic_name, data)
         t0 = Time.now
-        _redis.rpush(_key, data)
+        _redis.lpush(_key, data)
         t1 = Time.now
         RailsPipeline.logger.debug "Publishing to redis '#{topic_name}' took #{t1-t0}s"
       end
+
       def _redis
         RedisPublisher._redis
       end
+
       def _key
         RedisPublisher.namespace
       end
+
     end
 
     module ClassMethods
