@@ -92,6 +92,18 @@ class DefaultRedisEmitter < DefaultModel
   include RailsPipeline::RedisPublisher
 end
 
+module BackgroundDummyEmitter
+  def self.included(base)
+      RailsPipeline::BackgroundEmitter.included(base)
+      DummyPublisher.included(base)
+  end
+end
+
+class TestBackgroundEmitter < TestModel
+  include BackgroundDummyEmitter
+end
+
+
 # Dummy SNS model
 class DefaultSnsEmitter < DefaultModel
   include RailsPipeline::Emitter

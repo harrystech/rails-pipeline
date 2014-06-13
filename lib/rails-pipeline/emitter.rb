@@ -66,4 +66,35 @@ module RailsPipeline
   end
 
 
+  module BackgroundEmitter
+    def self.included(base)
+      RailsPipeline::Emitter.included(base)
+      base.send :include, RailsPipeline::BackgroundEmitter::InstanceMethods
+    end
+    module InstanceMethods
+      def emit
+        puts "Emitting in new thread"
+        Thread.new do
+          self.class.pipeline_versions.each do |version|
+            topic = self.class.topic_name(version)
+            RailsPipeline.logger.debug "Emitting to #{topic}"
+            data = self.send("to_pipeline_#{version}")
+            enc_data = self.class.encrypt(data.to_s, type_info: data.class.name)
+            self.publish(topic, enc_data.to_s)
+          end
+          puts "Emission complete"
+          ActiveRecord::Base.connection.close
+        end
+      end
+
+    end
+  end
+
+  module BackgroundRedisEmitter
+    def self.included(base)
+      RailsPipeline::BackgroundEmitter.included(base)
+      RailsPipeline::RedisPublisher.included(base)
+    end
+  end
+
 end
