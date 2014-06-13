@@ -22,7 +22,6 @@ end
 # Class with versioned emitter
 class TestModel < ActiveRecord::Base
   has_no_table  # using activerecord-tableless gem
-  include RailsPipeline::Emitter
 
   column :foo, :string
 
@@ -55,7 +54,6 @@ end
 # Class that will have v1.0 emitter
 class DefaultModel < ActiveRecord::Base
   has_no_table  # using activerecord-tableless gem
-  include RailsPipeline::Emitter
 
   column :foo, :string
 
@@ -75,27 +73,33 @@ class DefaultModel < ActiveRecord::Base
 end
 
 class TestEmitter < TestModel
+  include RailsPipeline::Emitter
   include DummyPublisher
 end
 
 class DefaultEmitter < DefaultModel
+  include RailsPipeline::Emitter
   include DummyPublisher
 end
 
 # Dummy Redis models
 class TestRedisEmitter < TestModel
+  include RailsPipeline::Emitter
   include RailsPipeline::RedisPublisher
 end
 class DefaultRedisEmitter < DefaultModel
+  include RailsPipeline::Emitter
   include RailsPipeline::RedisPublisher
 end
 
 # Dummy SNS model
 class DefaultSnsEmitter < DefaultModel
+  include RailsPipeline::Emitter
   include RailsPipeline::SnsPublisher
 end
 
 # Dummy IronMQ model
 class DefaultIronmqEmitter < DefaultModel
+  include RailsPipeline::Emitter
   include RailsPipeline::IronmqPublisher
 end

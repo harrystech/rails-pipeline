@@ -5,14 +5,12 @@ require "rails-pipeline/symmetric_encryptor"
 
 module RailsPipeline
   module Emitter
-    include RailsPipeline::SymmetricEncryptor
 
     def self.included(base)
-      # doing an include SymmetricEncryptor doesn't pull this in where I'd like it
-      base.extend RailsPipeline::SymmetricEncryptor::ClassMethods
+      RailsPipeline::SymmetricEncryptor.included(base)
       base.send :include, InstanceMethods
       base.extend ClassMethods
-      base.after_save :emit
+      base.after_commit :emit
     end
 
     module InstanceMethods
