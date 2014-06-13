@@ -66,4 +66,10 @@ module RailsPipeline
   end
 
 
+  module RedisEmitter
+    def self.included(base)
+      RailsPipeline::Emitter.included(base)
+      RailsPipeline::RedisPublisher.included(base)
+    end
+  end
 end
