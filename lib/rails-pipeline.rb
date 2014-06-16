@@ -6,8 +6,17 @@ require "rails-pipeline/sns_publisher"
 require "rails-pipeline/ironmq_publisher"
 
 module RailsPipeline
-
-  def self.logger
-    Rails.logger
+  class << self
+    # Allow configuration via initializer
+    @@logger = nil
+    def logger
+      if @@logger.nil?
+        @@logger = Rails.logger
+      end
+      @@logger
+    end
+    def logger=(logger)
+      @@logger = logger
+    end
   end
 end
