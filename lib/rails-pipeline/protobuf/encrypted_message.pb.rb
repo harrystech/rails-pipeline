@@ -16,6 +16,7 @@ module RailsPipeline
     required :string, :ciphertext, 4
     optional :string, :owner_info, 5
     optional :string, :type_info, 6
+    optional :string, :topic, 7
   end
 
 end

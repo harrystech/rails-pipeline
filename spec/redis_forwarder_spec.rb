@@ -13,20 +13,6 @@ describe RailsPipeline::RedisForwarder do
   end
 
 
-  it "should get the class and version from type_info" do
-    type_info = "DefaultEmitter_1_0"
-    clazz, version = DummyRedisForwarder._payload_class_and_version(type_info)
-    expect(clazz).to eq(DefaultEmitter)
-    expect(version).to eq "1_0"
-  end
-
-  it "should get the topic from type_info" do
-    type_info = "DefaultEmitter_1_0"
-    topic = DummyRedisForwarder._topic_name(type_info)
-    expect(topic).to eq "harrys-#{Rails.env}-v1-default_emitters"
-  end
-
-
   context "having one message on the queue" do
     before do
       @redis.del(@redis_queue)

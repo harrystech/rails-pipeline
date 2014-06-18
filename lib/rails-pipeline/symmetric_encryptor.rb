@@ -17,7 +17,7 @@ module RailsPipeline
 
     module ClassMethods
 
-      def encrypt(plaintext, owner_info: nil, type_info: nil)
+      def encrypt(plaintext, owner_info: nil, type_info: nil, topic: nil)
         # Inititalize a symmetric cipher for encryption
         cipher = OpenSSL::Cipher::AES256.new(:CBC)
         cipher.encrypt
@@ -43,7 +43,8 @@ module RailsPipeline
           iv: Base64.encode64(iv),
           ciphertext: Base64.encode64(ciphertext),
           owner_info: owner_info,
-          type_info: type_info
+          type_info: type_info,
+          topic: topic
         )
       end
 

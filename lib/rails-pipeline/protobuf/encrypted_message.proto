@@ -6,5 +6,6 @@ message EncryptedMessage {
 	required string iv = 3;
 	required string ciphertext = 4;
 	optional string owner_info = 5; // e.g. user_id, if you store a key on the User
-	optional string type_info = 6; // ruby class name
+	optional string type_info = 6;  // ruby class name
+	optional string topic = 7;      // useful for redis message forwarder
 }

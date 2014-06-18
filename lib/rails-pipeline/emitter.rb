@@ -19,7 +19,7 @@ module RailsPipeline
           topic = self.class.topic_name(version)
           RailsPipeline.logger.debug "Emitting to #{topic}"
           data = self.send("to_pipeline_#{version}")
-          enc_data = self.class.encrypt(data.to_s, type_info: data.class.name)
+          enc_data = self.class.encrypt(data.to_s, type_info: data.class.name, topic: topic)
           self.publish(topic, enc_data.to_s)
         end
       end

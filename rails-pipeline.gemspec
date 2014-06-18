@@ -13,7 +13,8 @@ Gem::Specification.new do |s|
   s.summary     = "Data Pipeline for distributed collection of Rails applications"
   s.description = "Emit versioned changes to a message queue when saving Rails models."
 
-  s.files = Dir["{app,config,db,lib}/**/*"] + ["MIT-LICENSE", "Rakefile", "README.md"]
+  s.files = Dir["{app,config,db,lib,bin}/**/*"] + ["MIT-LICENSE", "Rakefile", "README.md"]
+  s.executables   = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
   s.test_files = Dir["spec/**/*spec.rb"]
 
   s.add_dependency "rails", "~> 3.2.18"

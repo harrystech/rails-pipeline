@@ -1,6 +1,6 @@
 
 require 'redis'
-
+require 'active_support/core_ext'
 require 'rails-pipeline/protobuf/encrypted_message.pb'
 
 # Pipeline forwarder base class that
@@ -55,7 +55,12 @@ module RailsPipeline
         puts "Processing #{encrypted_data.uuid}"
 
         # re-publish to wherever (e.g. IronMQ)
-        topic_name = self.class._topic_name(encrypted_data.type_info)
+        topic_name = encrypted_data.topic
+        if topic_name.nil?
+          puts "Damaged message, no topic name"
+          return
+        end
+
         publish(topic_name, data)
         @processed += 1
 
@@ -84,6 +89,12 @@ module RailsPipeline
     def check_for_failures
       # Lock in_progress queue or return
       num_in_progress = _redis.llen(@in_progress_queue)
+      if num_in_progress == 0
+        puts "No messages in progress, skipping check for failures"
+        return
+      end
+
+      puts "Locking '#{@in_progress_queue}' for #{num_in_progress} seconds"
 
       # Attempt to lock this queue for the next num_in_progress seconds
       lock_key = "#{@in_progress_queue}__lock"
@@ -111,7 +122,7 @@ module RailsPipeline
     # Function that runs in the loop
     def run
       process_queue
-      puts "Processed: #{@processed}"
+      puts "Queue: '#{@queue}'. Processed: #{@processed}"
       if Time.now - @failure_last_checked > @failure_check_interval
         @failure_last_checked = Time.now
         check_for_failures
@@ -173,7 +184,7 @@ module RailsPipeline
     def _put_back_on_queue(message)
       future = nil
       _redis.multi do
-        _redis.lpush(@queue, message)
+        _redis.rpush(@queue, message)
         future = _redis.lrem(@in_progress_queue, 1, message)
       end
       removed = future.value
@@ -182,19 +193,5 @@ module RailsPipeline
       end
     end
 
-    # Figure out the destination queue topic name based on the EncryptedMessage
-    # type info
-    def self._topic_name(type_info)
-      clazz, version = _payload_class_and_version(type_info)
-      return clazz.topic_name(version)
-    end
-
-    # Parse the encrypted payload class and version from
-    # EncryptedMessage.type_info
-    def self._payload_class_and_version(type_info)
-      class_name, version = type_info.split("_", 2)
-      clazz = Object::const_get(class_name)
-      return clazz, version
-    end
   end
 end
