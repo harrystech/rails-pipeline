@@ -168,9 +168,10 @@ module RailsPipeline
     end
 
     def _in_progress_queue
-      "#{@key}_in_progress"
+      "#{@queue}_in_progress"
     end
 
+    # The redis key at which we 'claim' the message when we start processing it.
     def _report_key(uuid)
       "#{@queue}__#{uuid}"
     end
