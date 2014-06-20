@@ -16,11 +16,12 @@ module RailsPipeline
     module InstanceMethods
       def emit
         begin
+          destroyed = self.transaction_include_action?(:destroy)
           self.class.pipeline_versions.each do |version|
             topic = self.class.topic_name(version)
             RailsPipeline.logger.debug "Emitting to #{topic}"
             data = self.send("to_pipeline_#{version}")
-            enc_data = self.class.encrypt(data.to_s, type_info: data.class.name, topic: topic)
+            enc_data = self.class.encrypt(data.to_s, type_info: data.class.name, topic: topic, destroyed: destroyed)
             self.publish(topic, enc_data.to_s)
           end
         rescue Exception => e

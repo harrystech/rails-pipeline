@@ -17,6 +17,7 @@ module RailsPipeline
     optional :string, :owner_info, 5
     optional :string, :type_info, 6
     optional :string, :topic, 7
+    optional :bool, :destroyed, 8
   end
 
 end

@@ -8,4 +8,5 @@ message EncryptedMessage {
 	optional string owner_info = 5; // e.g. user_id, if you store a key on the User
 	optional string type_info = 6;  // ruby class name
 	optional string topic = 7;      // useful for redis message forwarder
+	optional bool destroyed = 8;    // indicates that the payload was destroyed / deleted
 }
