@@ -29,7 +29,7 @@ module RailsPipeline
           destroyed = self.transaction_include_action?(:destroy)
           self.class.pipeline_versions.each do |version|
             enc_data = create_message(version, destroyed)
-            self.publish(topic, enc_data.to_s)
+            self.publish(enc_data.topic, enc_data.to_s)
           end
         rescue Exception => e
           RailsPipeline.logger.error("Error during emit(): #{e}")

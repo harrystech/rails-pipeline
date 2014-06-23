@@ -41,7 +41,7 @@ describe RailsPipeline::Emitter do
       DefaultEmitter.should_receive(:encrypt).once { |data|
         obj = DefaultEmitter_1_0.parse(data)
         expect(obj.foo).to eq "baz"
-      }
+      }.and_call_original
       @default_emitter.should_receive(:publish).once
       @default_emitter.emit
     end
