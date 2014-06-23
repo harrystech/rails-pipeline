@@ -43,6 +43,12 @@ class TestModel < ActiveRecord::Base
                         extra: "hi")
   end
 
+  def self.from_pipeline_2_0(msg)
+    instance = TestModel.new
+    instance.foo = msg.foo
+    return instance
+  end
+
   def kinda_attributes
     data = attributes
     data[:id] = 1
@@ -102,4 +108,8 @@ end
 class DefaultIronmqEmitter < DefaultModel
   include RailsPipeline::Emitter
   include RailsPipeline::IronmqPublisher
+end
+
+class TestSubscriber
+  include RailsPipeline::Subscriber
 end

@@ -5,14 +5,20 @@ require "rails-pipeline/protobuf/encrypted_message.pb"
 
 module RailsPipeline
   module SymmetricEncryptor
+    class << self
+      # Allow configuration via initializer
+      @@secret = nil
+      def _secret
+        @@secret.nil? ?  Rails.application.config.secret_token : @@secret
+      end
+
+      def secret=(secret)
+        @@secret = secret
+      end
+    end
 
     def self.included(base)
       base.extend ClassMethods
-      # Inject a class variable
-      class << base
-        @@secret = nil
-      end
-      #base.send :include, InstanceMethods
     end
 
     module ClassMethods
@@ -69,7 +75,7 @@ module RailsPipeline
       end
 
       def _secret
-        @@secret.nil? ?  Rails.application.config.secret_token : @@secret
+        RailsPipeline::SymmetricEncryptor._secret
       end
 
       def _key(salt)

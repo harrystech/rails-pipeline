@@ -1,0 +1,138 @@
+#!/usr/bin/env ruby
+
+# command line tool for administering data pipeline queues
+#
+# To create queues for an app following certain models:
+#     pipeline subscribe-app APP_NAME orders,products,users
+
+require 'thor'
+require 'aws-sdk'
+require 'iron_mq'
+require 'pry'
+
+class Pipeline < Thor
+    # TODO: Kinda clunky, but there is a way to get the account ID programmatically:
+    # https://forums.aws.amazon.com/thread.jspa?threadID=108012
+    AWS_ACCOUNT_ID = ENV["AWS_ACCOUNT_ID"]
+
+    def initialize(args = [], local_options = {}, config = {})
+        super(args, local_options, config)
+        @sns = AWS::SNS.new
+        @sqs = AWS::SQS.new
+        @iam = AWS::IAM.new
+    end
+
+
+    desc "sns-create-topic TABLE_NAME --env ENV --version VERSION", "create topic for TABLE_NAME"
+    option :env
+    option :version
+    def create_sns_topic(table_name)
+        env = options.fetch(:env, "test")
+        version = options.fetch(:version, "1_0")
+        topic_name = _topic_name(table_name, env, version)
+        topic = _find_or_create_topic(topic_name)
+        return topic
+    end
+
+    desc "sqs-subscribe-app APP TABLE_NAME[,TABLE_NAME_2,...] --env ENV --version VERSION", "create queue(s) for APP subscribed to TABLE_NAME feeds"
+    option :env
+    option :version
+    def sqs_subscribe_app(app_name, table_names)
+        env = options.fetch(:env, "test")
+        version = options.fetch(:version, "1_0")
+
+        table_names.split(',').each do |table_name|
+            topic_name = _topic_name(table_name, env, version)
+            queue_name = _queue_name(topic_name, app_name)
+            queue = _find_or_create_queue(queue_name)
+            topic = _find_or_create_topic(topic_name)
+            sub = _subscribe_queue_to_topic(queue, topic)
+        end
+    end
+
+    # Placeholders for IronMQ functions
+    desc "ironmq-subscribe-endpoint ENDPOINT TABLE_NAME_1[,TABLE_NAME_2,...] --env ENV --version VERSION", "subscribe the endpoint to updates on ironmq"
+    option :env
+    option :version
+    def ironmq_subscribe_endpoint(endpoint, table_names)
+        env = options.fetch(:env, "test")
+        version = options.fetch(:version, "1_0")
+
+        table_names.split(',').each do |table_name|
+            topic_name = _topic_name(table_name, env, version)
+            queue = _iron.queue(topic_name)
+            options = {
+              push_type: "multicast",
+              retries: 10,
+              retries_delay: 10
+            }
+            puts "Setting push queue settings on #{queue.name}"
+            queue.update(options)
+            puts "Subscribe #{topic_name} to #{endpoint}"
+            queue.add_subscriber({ url: endpoint })
+        end
+    end
+
+
+    private
+
+    def _topic_name(table_name, env, version)
+        "harrys-#{env}-v#{_major_version(version)}-#{table_name}"
+    end
+
+    def _queue_name(topic_name, app)
+        "#{topic_name}-#{app}"
+    end
+
+    def _major_version(v)
+        v.include?('_') ? v.split('_')[0] : v
+    end
+
+    def _find_or_create_topic(topic_name)
+        arn = _topic_arn(topic_name)
+        topic = @sns.topics[arn]
+        begin
+            topic.owner
+            puts "Found topic #{arn}"
+            return topic
+        rescue AWS::SNS::Errors::NotFound
+            puts "Creating topic #{topic_name}"
+            @sns.client.create_topic({name: topic_name})
+            return _find_or_create_topic(topic_name)
+        end
+    end
+
+    def _find_or_create_queue(queue_name)
+        puts "Find or create queue #{queue_name}"
+        begin
+            queue = @sqs.queues.named(queue_name)
+            return queue
+        rescue AWS::SQS::Errors::NonExistentQueue
+            @sqs.queues.create(queue_name)
+            puts "Creating queue #{queue_name}"
+            return _find_or_create_queue(queue_name)
+        end
+    end
+
+    def _subscribe_queue_to_topic(queue, topic)
+        puts "Subscribing #{queue.arn} to #{topic.arn}"
+        return topic.subscribe(queue)
+    end
+
+    def _topic_arn(topic_name, region="us-east-1")
+        "arn:aws:sns:#{region}:#{AWS_ACCOUNT_ID}:#{topic_name}"
+    end
+
+    def _queue_arn(queue_name, region="us-east-1")
+        "arn:aws:sns:#{region}:#{AWS_ACCOUNT_ID}:#{queue_name}"
+    end
+
+    def _iron
+      @iron = IronMQ::Client.new if @iron.nil?
+      return @iron
+    end
+
+end
+
+
+Pipeline.start()

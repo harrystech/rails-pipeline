@@ -1,5 +1,4 @@
 
-
 module RailsPipeline
   class << self
     # Allow configuration via initializer
@@ -23,6 +22,7 @@ module RailsPipeline
 end
 
 require "rails-pipeline/emitter"
+require "rails-pipeline/subscriber"
 require "rails-pipeline/symmetric_encryptor"
 require "rails-pipeline/redis_publisher"
 require "rails-pipeline/sns_publisher"
