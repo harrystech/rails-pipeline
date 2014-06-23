@@ -1,9 +1,9 @@
 # RailsPipeline
 
 
-Emit a version stream of changes to a pub/sub queue when ActiveRecord models are
+Emit a versioned stream of changes to a pub/sub queue when ActiveRecord models are
 saved. This gem supports Redis, AWS (SNS/SQS), and IronMQ publishing targets.
-The Redis backend supports a forwarding system to a,cloud MQ like IronMQ.
+The Redis backend supports a forwarding system to a cloud MQ like IronMQ.
 
 ## Motivation
 
@@ -22,4 +22,6 @@ The Redis backend supports a forwarding system to a,cloud MQ like IronMQ.
 ## Protocol Buffers
 
    brew install protobuf
-   bundle exec ruby-protoc spec/protobuf/*.proto
+   make
+
+[![TravisCI](https://travis-ci.org/harrystech/rails-pipeline.png)](https://travis-ci.org/harrystech/rails-pipeline)
