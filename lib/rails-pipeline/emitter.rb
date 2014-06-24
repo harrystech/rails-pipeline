@@ -15,6 +15,10 @@ module RailsPipeline
 
     module InstanceMethods
       def emit
+        if ENV.has_key?("DISABLE_RAILS_PIPELINE") || ENV.has_key?("DISABLE_RAILS_PIPELINE_EMISSION")
+          RailsPipeline.logger.debug "Skipping outgoing pipeline messages (disabled by env vars)"
+          return
+        end
         begin
           destroyed = self.transaction_include_action?(:destroy)
           self.class.pipeline_versions.each do |version|

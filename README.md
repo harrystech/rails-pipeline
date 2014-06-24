@@ -41,6 +41,26 @@ Each queue backend has different methods of consuming messages as a subscriber,
 but for IronMQ there is an implementation of a webhook subscriber (details
 below).
 
+The following environment variables control pipeline operations
+
+	# If set, do not emit or process incoming messages
+    DISABLE_RAILS_PIPELINE
+
+	# If set, do not emit pipeline messages
+	DISABLE_RAILS_PIPELINE_EMISSION
+
+	# If set, do not process incoming messages as a subscriber, just drop them
+	DISABLE_RAILS_PIPELINE_PROCESSING
+
+The following environment variable sets the shared secret for pipeline encryption
+
+    PIPELINE_SECRET
+
+You can pass in a logger for RailsPipeline in an initializer e.g.
+
+	RailsPipeline.logger = Rails.logger
+	RailsPipeline.logger.level = Log4r::DEBUG
+
 ## Backends
 
 ### Redis
@@ -57,10 +77,25 @@ We have included a bouncer process that will read from the Redis queue (in
 parallel if need be) and forward on to IronMQ. Adding an AWS forwarder would be
 trivial.
 
-TODO: Config
-
 It may be desirable to write a full pub/sub emitter for Redis (rather than just
 a forwarder.)
+
+#### Redis Config
+
+The following environment variables are checked for Redis urls (default:
+localhost:6379):
+
+	REDISCLOUD_URL
+	REDISTOGO_URL
+
+Alternatively you could pass in an instance of the Redis client in an
+initializer:
+
+    RailsPipeline::RedisPublisher.redis = MyRedisFactory.get
+
+The key name of the redis queue should be set in an initializer, e.g.
+
+    RailsPipeline::RedisPublisher.namespace = "rails-pipeline-spec"
 
 ### IronMQ
 
@@ -100,6 +135,13 @@ supplied 'pipeline' command
 
 You may find [ngrok](http://ngrok.com) helpful for developing and debugging.
 
+#### Iron.io Config
+
+The 'iron_mq' gem picks up the following environment variables
+
+    IRON_PROJECT_ID
+	IRON_TOKEN
+
 ### AWS (Simple Notification Service)
 
 <table>
@@ -121,10 +163,22 @@ Create SNS topics to publish to:
 
 	pipeline sns-create-topic TABLE_NAME --env ENV --version VERSION
 
-Create and SQS queue and subscribe it to a TOPIC (one per subscibing rails
+Create and SQS queue and subscribe it to a TOPIC (one per subscribing rails
 	app)
 
 	pipeline sqs-subscribe-app APP TABLE_NAME[,TABLE_NAME_2,...] --env ENV --version VERSION
+
+#### AWS Config
+
+The AWS gem picks up the following environment variables
+
+	AWS_ACCESS_KEY_ID
+	AWS_SECRET_ACCESS_KEY
+
+In addition, we use the numerical 'owner id' for your account which should be
+set as
+
+	AWS_ACCOUNT_ID
 
 
 ## Protocol Buffers
