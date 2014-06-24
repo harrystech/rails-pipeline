@@ -27,6 +27,10 @@ module RailsPipeline
 
       # Take an EncryptedMessage envelope, and 
       def handle_envelope(envelope)
+        if ENV.has_key?("DISABLE_RAILS_PIPELINE") || ENV.has_key?("DISABLE_RAILS_PIPELINE_PROCESSING")
+          RailsPipeline.logger.debug "Skipping incoming pipeline messages (disabled by env vars)"
+          return
+        end
         payload_str = self.class.decrypt(envelope)
         begin
           clazz = Object.const_get(envelope.type_info)
