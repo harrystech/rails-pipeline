@@ -1,9 +1,4 @@
 
-require "rails-pipeline/emitter"
-require "rails-pipeline/symmetric_encryptor"
-require "rails-pipeline/redis_publisher"
-require "rails-pipeline/sns_publisher"
-require "rails-pipeline/ironmq_publisher"
 
 module RailsPipeline
   class << self
@@ -26,3 +21,9 @@ module RailsPipeline
     HAS_NEWRELIC = false
   end
 end
+
+require "rails-pipeline/emitter"
+require "rails-pipeline/symmetric_encryptor"
+require "rails-pipeline/redis_publisher"
+require "rails-pipeline/sns_publisher"
+require "rails-pipeline/ironmq_publisher"

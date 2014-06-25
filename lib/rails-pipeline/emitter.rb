@@ -8,14 +8,15 @@ module RailsPipeline
 
     def self.included(base)
       RailsPipeline::SymmetricEncryptor.included(base)
+      if RailsPipeline::HAS_NEWRELIC
+        puts "Instrumenting emitter"
+        ::NewRelic::Agent::Instrumentation::ControllerInstrumentation.included(base)
+      end
       base.send :include, InstanceMethods
       base.extend ClassMethods
       base.after_commit :emit
-      if RailsPipeline::HAS_NEWRELIC
-        puts "Instrumenting emitter"
-        ::NewRelic::Agent::MethodTracer.included(base)
-        base.add_transaction_tracer :emit, category: :task if RailsPipeline::HAS_NEWRELIC
-      end
+
+      base.add_transaction_tracer :emit, category: :task if RailsPipeline::HAS_NEWRELIC
     end
 
     module InstanceMethods
