@@ -12,6 +12,11 @@ $redis = ENV["REDISCLOUD_URL"] || ENV["REDISTOGO_URL"] || "localhost:6379"
 
 module RailsPipeline
   class RedisForwarder
+    if RailsPipeline::HAS_NEWRELIC
+      puts "Instrumenting RedisForwarder with NewRelic"
+      include ::NewRelic::Agent::MethodTracer
+      #include ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
+    end
 
     def initialize(key)
       _trap_signals
@@ -78,6 +83,8 @@ module RailsPipeline
         end
       end
     end
+    #add_transaction_tracer :process_queue, category: :task if RailsPipeline::HAS_NEWRELIC
+    add_method_tracer :process_queue, 'Custom/process_queue' if RailsPipeline::HAS_NEWRELIC
 
     # note in redis that we are processing this message
     def report(uuid)
@@ -135,6 +142,10 @@ module RailsPipeline
         begin
           if @stop
             puts "Finished"
+            if RailsPipeline::HAS_NEWRELIC
+              RailsPipeline.logger.info "Shutting down NewRelic"
+              ::NewRelic::Agent.shutdown
+            end
             break
           end
           run

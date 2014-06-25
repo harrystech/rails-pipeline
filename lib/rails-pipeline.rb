@@ -19,4 +19,11 @@ module RailsPipeline
       @@logger = logger
     end
   end
+  begin
+    require 'newrelic_rpm'
+    puts "Detected NewRelic"
+    HAS_NEWRELIC = true
+  rescue LoadError
+    HAS_NEWRELIC = false
+  end
 end
