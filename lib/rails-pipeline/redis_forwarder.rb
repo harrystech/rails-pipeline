@@ -14,8 +14,7 @@ module RailsPipeline
   class RedisForwarder
     if RailsPipeline::HAS_NEWRELIC
       puts "Instrumenting RedisForwarder with NewRelic"
-      include ::NewRelic::Agent::MethodTracer
-      #include ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
+      include ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
     end
 
     def initialize(key)
@@ -83,8 +82,7 @@ module RailsPipeline
         end
       end
     end
-    #add_transaction_tracer :process_queue, category: :task if RailsPipeline::HAS_NEWRELIC
-    add_method_tracer :process_queue, 'Custom/process_queue' if RailsPipeline::HAS_NEWRELIC
+    add_transaction_tracer :process_queue, category: :task if RailsPipeline::HAS_NEWRELIC
 
     # note in redis that we are processing this message
     def report(uuid)
@@ -125,6 +123,7 @@ module RailsPipeline
         end
       end
     end
+    add_transaction_tracer :check_for_failures, category: :task if RailsPipeline::HAS_NEWRELIC
 
     # Function that runs in the loop
     def run

@@ -11,6 +11,11 @@ module RailsPipeline
       base.send :include, InstanceMethods
       base.extend ClassMethods
       base.after_commit :emit
+      if RailsPipeline::HAS_NEWRELIC
+        puts "Instrumenting emitter"
+        ::NewRelic::Agent::MethodTracer.included(base)
+        base.add_transaction_tracer :emit, category: :task if RailsPipeline::HAS_NEWRELIC
+      end
     end
 
     module InstanceMethods
