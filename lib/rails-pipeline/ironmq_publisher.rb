@@ -11,13 +11,14 @@ require 'iron_mq'
 module RailsPipeline::IronmqPublisher
 
   def self.included(base)
-    if RailsPipeline::HAS_NEWRELIC
-      puts "Instrumenting IronMQ Forwarder"
-      ::NewRelic::Agent::Instrumentation::ControllerInstrumentation.included(base)
-    end
     base.send :include, InstanceMethods
     base.extend ClassMethods
-    base.add_transaction_tracer :publish, category: :task if RailsPipeline::HAS_NEWRELIC
+    if RailsPipeline::HAS_NEWRELIC
+      puts "Instrumenting IronMQ Forwarder"
+      base.send :include, ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
+      base.extend  ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
+      base.add_transaction_tracer :publish, category: :task
+    end
   end
 
   module InstanceMethods
