@@ -13,7 +13,6 @@ $redis = ENV["REDISCLOUD_URL"] || ENV["REDISTOGO_URL"] || "localhost:6379"
 module RailsPipeline
   class RedisForwarder
     if RailsPipeline::HAS_NEWRELIC
-      puts "Instrumenting RedisForwarder with NewRelic"
       include ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
     end
 
@@ -56,12 +55,12 @@ module RailsPipeline
 
       begin
         encrypted_data = RailsPipeline::EncryptedMessage.parse(data)
-        puts "Processing #{encrypted_data.uuid}"
+        RailsPipeline.logger.debug "Processing #{encrypted_data.uuid}"
 
         # re-publish to wherever (e.g. IronMQ)
         topic_name = encrypted_data.topic
         if topic_name.nil?
-          puts "Damaged message, no topic name"
+          RailsPipeline.logger.error "Damaged message, no topic name"
           return
         end
 
@@ -71,13 +70,13 @@ module RailsPipeline
         # Now remove this message from the in_progress queue
         removed = _redis.lrem(@in_progress_queue, 1, data)
         if removed != 1
-          puts "OHNO! Didn't remove the data I was expecting to: #{data}"
+          RailsPipeline.logger.warn "OHNO! Didn't remove the data I was expecting to: #{data}"
         end
       rescue Exception => e
-        puts e
-        puts e.backtrace.join("\n")
+        RailsPipeline.logger.info e
+        RailsPipeline.logger.info e.backtrace.join("\n")
         if !data.nil?
-          puts "Putting message #{encrypted_data.uuid} back on main queue"
+          RailsPipeline.logger.info "Putting message #{encrypted_data.uuid} back on main queue"
           _put_back_on_queue(data)
         end
       end
@@ -95,17 +94,17 @@ module RailsPipeline
       # Lock in_progress queue or return
       num_in_progress = _redis.llen(@in_progress_queue)
       if num_in_progress == 0
-        puts "No messages in progress, skipping check for failures"
+        RailsPipeline.logger.debug "No messages in progress, skipping check for failures"
         return
       end
 
-      puts "Locking '#{@in_progress_queue}' for #{num_in_progress} seconds"
+      RailsPipeline.logger.debug "Locking '#{@in_progress_queue}' for #{num_in_progress} seconds"
 
       # Attempt to lock this queue for the next num_in_progress seconds
       lock_key = "#{@in_progress_queue}__lock"
       locked = _redis.set(lock_key, _client_id, ex: num_in_progress, nx: true)
       if !locked
-        puts "in progress queue is locked"
+        RailsPipeline.logger.debug "in progress queue is locked"
         return
       end
 
@@ -116,10 +115,10 @@ module RailsPipeline
         enc_message = EncryptedMessage.parse(message)
         owner = _redis.get(_report_key(enc_message.uuid))
         if owner.nil?
-          puts "Putting timed-out message #{enc_message.uuid} back on main queue"
+          RailsPipeline.logger.info "Putting timed-out message #{enc_message.uuid} back on main queue"
           _put_back_on_queue(message)
         else
-          puts "Message #{uuid} is owned by #{owner}"
+          RailsPipeline.logger.debug "Message #{uuid} is owned by #{owner}"
         end
       end
     end
@@ -128,7 +127,7 @@ module RailsPipeline
     # Function that runs in the loop
     def run
       process_queue
-      puts "Queue: '#{@queue}'. Processed: #{@processed}"
+      RailsPipeline.logger.info "Queue: '#{@queue}'. Processed: #{@processed}"
       if Time.now - @failure_last_checked > @failure_check_interval
         @failure_last_checked = Time.now
         check_for_failures
@@ -140,7 +139,7 @@ module RailsPipeline
       while true
         begin
           if @stop
-            puts "Finished"
+            RailsPipeline.logger.info "Finished"
             if RailsPipeline::HAS_NEWRELIC
               RailsPipeline.logger.info "Shutting down NewRelic"
               ::NewRelic::Agent.shutdown
@@ -149,8 +148,8 @@ module RailsPipeline
           end
           run
         rescue Exception => e
-          puts e
-          puts e.backtrace.join("\n")
+          RailsPipeline.logger.info e
+          RailsPipeline.logger.info e.backtrace.join("\n")
         end
       end
     end
@@ -200,7 +199,7 @@ module RailsPipeline
       end
       removed = future.value
       if removed !=1
-        puts "ERROR: Didn't remove message from in_progress queue?!!!"
+        RailsPipeline.logger.error "ERROR: Didn't remove message from in_progress queue?!!!"
       end
     end
 

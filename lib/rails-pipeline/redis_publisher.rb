@@ -43,7 +43,6 @@ module RailsPipeline
       base.extend ClassMethods
       base.send :include, InstanceMethods
       if RailsPipeline::HAS_NEWRELIC
-        puts "Instrumenting RedisPublisher"
         base.send :include, ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
         base.extend  ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
         base.add_transaction_tracer :publish, category: :task

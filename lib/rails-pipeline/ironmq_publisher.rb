@@ -14,7 +14,6 @@ module RailsPipeline::IronmqPublisher
     base.send :include, InstanceMethods
     base.extend ClassMethods
     if RailsPipeline::HAS_NEWRELIC
-      puts "Instrumenting IronMQ Forwarder"
       base.send :include, ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
       base.extend  ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
       base.add_transaction_tracer :publish, category: :task

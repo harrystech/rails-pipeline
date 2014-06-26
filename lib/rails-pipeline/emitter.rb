@@ -13,7 +13,6 @@ module RailsPipeline
       base.after_commit :emit
 
       if RailsPipeline::HAS_NEWRELIC
-        puts "Instrumenting emitter"
         base.send :include, ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
         base.extend  ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
         base.add_transaction_tracer :emit, category: :task
