@@ -16,7 +16,11 @@ module RailsPipeline
   end
   begin
     require 'newrelic_rpm'
-    HAS_NEWRELIC = true
+    if ENV.has_key?("DISABLE_RAILS_PIPELINE") || ENV.has_key?("DISABLE_RAILS_PIPELINE_EMISSION")
+      HAS_NEWRELIC = false
+    else
+      HAS_NEWRELIC = true
+    end
   rescue LoadError
     HAS_NEWRELIC = false
   end
