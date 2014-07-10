@@ -21,6 +21,12 @@ module RailsPipeline
       RailsPipeline::SymmetricEncryptor.included(base)
       base.send :include, InstanceMethods
       base.extend ClassMethods
+      if RailsPipeline::HAS_NEWRELIC
+        base.send :include, ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
+        base.extend  ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
+        base.add_transaction_tracer :handle_envelope, category: :task
+        base.add_transaction_tracer :handle_payload, category: :task
+      end
     end
 
     module InstanceMethods
@@ -41,7 +47,6 @@ module RailsPipeline
 
         payload = clazz.parse(payload_str)
         handle_payload(payload)
-
       end
 
       def handle_payload(payload)
