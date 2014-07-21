@@ -7,8 +7,6 @@ module RailsPipeline
       @@registered_models = {}
       def register(payload_class, target_class)
         @@registered_models[payload_class] = target_class
-
-        # TODO allow registering procs
       end
 
       def target_class(payload_class)
@@ -31,7 +29,7 @@ module RailsPipeline
 
     module InstanceMethods
 
-      # Take an EncryptedMessage envelope, and 
+      # Take an EncryptedMessage envelope, and
       def handle_envelope(envelope)
         if ENV.has_key?("DISABLE_RAILS_PIPELINE") || ENV.has_key?("DISABLE_RAILS_PIPELINE_PROCESSING")
           RailsPipeline.logger.debug "Skipping incoming pipeline messages (disabled by env vars)"

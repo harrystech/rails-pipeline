@@ -10,7 +10,9 @@ module RailsPipeline
       RailsPipeline::SymmetricEncryptor.included(base)
       base.send :include, InstanceMethods
       base.extend ClassMethods
-      base.after_commit :emit
+      base.after_commit :emit_on_create, on: :create
+      base.after_commit :emit_on_update, on: :update
+      base.after_commit :emit_on_destroy, on: :destroy
 
       if RailsPipeline::HAS_NEWRELIC
         base.send :include, ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
@@ -20,15 +22,26 @@ module RailsPipeline
     end
 
     module InstanceMethods
-      def emit
+      def emit_on_create
+        emit(:create)
+      end
+
+      def emit_on_update
+        emit(:update)
+      end
+
+      def emit_on_destroy
+        emit(:destroy)
+      end
+
+      def emit(event_type)
         if ENV.has_key?("DISABLE_RAILS_PIPELINE") || ENV.has_key?("DISABLE_RAILS_PIPELINE_EMISSION")
           RailsPipeline.logger.debug "Skipping outgoing pipeline messages (disabled by env vars)"
           return
         end
         begin
-          destroyed = self.transaction_include_action?(:destroy)
           self.class.pipeline_versions.each do |version|
-            enc_data = create_message(version, destroyed)
+            enc_data = create_message(version, event_type)
             self.publish(enc_data.topic, enc_data.to_s)
           end
         rescue Exception => e
@@ -38,11 +51,11 @@ module RailsPipeline
         end
       end
 
-      def create_message(version, destroyed)
+      def create_message(version, event_type)
         topic = self.class.topic_name(version)
         RailsPipeline.logger.debug "Emitting to #{topic}"
         data = self.send("to_pipeline_#{version}")
-        enc_data = self.class.encrypt(data.to_s, type_info: data.class.name, topic: topic, destroyed: destroyed)
+        enc_data = self.class.encrypt(data.to_s, type_info: data.class.name, topic: topic, event_type: event_type)
         return enc_data
       end
 

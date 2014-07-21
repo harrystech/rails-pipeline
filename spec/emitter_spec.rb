@@ -6,6 +6,7 @@ require_relative 'pipeline_helper'
 describe RailsPipeline::Emitter do
   before do
     @test_emitter = TestEmitter.new({foo: "bar"}, without_protection: true)
+    @test_model = TestModelWithTable.new
     @default_emitter = DefaultEmitter.new({foo: "baz"}, without_protection: true)
   end
 
@@ -72,6 +73,43 @@ describe RailsPipeline::Emitter do
     it "should emit multiple versions" do
       @test_emitter.should_receive(:publish).twice
       @test_emitter.emit
+    end
+  end
+
+  context 'event type' do
+    context 'created' do
+      it "sets event type correctly in enveloppe" do
+        @test_model.should_receive(:publish).once do |topic, serialized_message|
+          topic.should eq("harrys-#{Rails.env}-v1-test_model_with_tables")
+          message = RailsPipeline::EncryptedMessage.parse(serialized_message)
+          expect(message.event_type).to eq(RailsPipeline::EncryptedMessage::EventType::CREATED)
+        end
+        @test_model.save!
+      end
+    end
+
+    context 'updated' do
+      it "sets event type correctly in enveloppe" do
+        @test_model.save!
+        expect(@test_model).to receive(:publish).once do |topic, serialized_message|
+          expect(topic).to eq("harrys-#{Rails.env}-v1-test_model_with_tables")
+          message = RailsPipeline::EncryptedMessage.parse(serialized_message)
+          expect(message.event_type).to eq(RailsPipeline::EncryptedMessage::EventType::UPDATED)
+        end
+        @test_model.save!
+      end
+    end
+
+    context 'deleted' do
+      it "sets event type correctly in enveloppe" do
+        @test_model.save!
+        expect(@test_model).to receive(:publish).once do |topic, serialized_message|
+          expect(topic).to eq("harrys-#{Rails.env}-v1-test_model_with_tables")
+          message = RailsPipeline::EncryptedMessage.parse(serialized_message)
+          expect(message.event_type).to eq(RailsPipeline::EncryptedMessage::EventType::DELETED)
+        end
+        @test_model.destroy
+      end
     end
   end
 end
