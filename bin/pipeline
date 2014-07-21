@@ -55,8 +55,8 @@ class Pipeline < Thor
     option :env
     option :version
     def ironmq_subscribe_endpoint(endpoint, table_names)
-        env = options.fetch(:env, "test")
-        version = options.fetch(:version, "1_0")
+        env = options.fetch('env', "test")
+        version = options.fetch('version', "1_0")
 
         table_names.split(',').each do |table_name|
             topic_name = _topic_name(table_name, env, version)
