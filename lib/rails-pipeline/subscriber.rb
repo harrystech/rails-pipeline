@@ -7,6 +7,18 @@ module RailsPipeline
       @@registered_models = {}
       def register(payload_class, target_class)
         @@registered_models[payload_class] = target_class
+        # We might want to add an extra layer of configuration, to register only some of the CRUD
+        # operations, a suggested DSL would be:
+        #
+        #  RailsPipeline::Subscriber.register(Harrys::Pipeline::Order_1_0, Order) do |config|
+        #    config.use_default_handler_for [:create, :update, :destroy]
+        #  end
+        #
+        #  or, to only use update and destroy
+        #
+        #  RailsPipeline::Subscriber.register(Harrys::Pipeline::Order_1_0, Order) do |config|
+        #    config.use_default_handler_for [:update, :destroy]
+        #  end
       end
 
       def target_class(payload_class)
