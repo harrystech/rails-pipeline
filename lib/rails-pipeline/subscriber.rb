@@ -44,10 +44,10 @@ module RailsPipeline
         end
 
         payload = clazz.parse(payload_str)
-        handle_payload(payload)
+        handle_payload(payload, enveope.event_type)
       end
 
-      def handle_payload(payload)
+      def handle_payload(payload, event_type)
         version = _version(payload)
         clazz = target_class(payload)
         method = "from_pipeline_#{version}".to_sym
@@ -58,13 +58,46 @@ module RailsPipeline
           return
         end
 
-        if clazz.is_a?(Class) && clazz.methods.include?(method)
-          target = clazz.send(method, payload)
-          # TODO can we just save this now?
-          target.save!
+        if clazz.is_a?(Class)
+          if clazz.methods.include?(method)
+            # Target class had a from_pipeline method, so just call it and move on
+            target = clazz.send(method, payload, event_type)
+          else
+            handle_object_action(payload, event_type)
+          end
           return target
         elsif clazz.is_a? Proc
           return clazz.call(payload)
+        end
+      end
+
+      def handle_object_action(payload, event_type)
+        # FIXME: Shitty name
+        #
+        # This method is active record only, we might want to use adapters like:
+        # call `RailsPipeline::PersistenceAdapter.create`
+        #
+        #   and have the adapter defined in their own class:
+        #   - RailsPipeline::PersistenceAdapter::ActiveRecord.create
+        #   - RailsPipeline::PersistenceAdapter::Mongoid.create
+        #   - RailsPipeline::PersistenceAdapter::MyCustomAdapter.create
+        #   - ...
+        begin
+          case event_type
+          when RailsPipeline::EncryptedMessage::EventType::CREATED
+            return target_class(payload).create!(payload.to_hash, without_protection: true)
+          when RailsPipeline::EncryptedMessage::EventType::UPDATED
+            # We might want to allow confiugration of the primary key field
+            object = target_class(payload).find(payload.id)
+            object.update_attributes!(payload.to_hash, without_protection: true)
+            return object
+          when RailsPipeline::EncryptedMessage::EventType::DELETED
+            object = target_class(payload).find(payload.id)
+            object.destroy
+            return object
+          end
+        rescue ActiveRecord::StatementInvalid, ActiveRecord::RecordNotFound => e
+          RailsPipeline.logger.error "Could not handle payload: #{payload.inspect}, event_type: #{event_type}"
         end
       end
 

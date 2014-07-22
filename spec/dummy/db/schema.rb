@@ -14,6 +14,7 @@
 ActiveRecord::Schema.define(:version => 20140721203131) do
 
   create_table "test_model_with_tables", :force => true do |t|
+    t.string "foo"
   end
 
 end
