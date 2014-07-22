@@ -34,7 +34,7 @@ module RailsPipeline
         emit(:destroy)
       end
 
-      def emit(event_type)
+      def emit(event_type = RailsPipeline::EncryptedMessage::EventType::CREATED)
         if ENV.has_key?("DISABLE_RAILS_PIPELINE") || ENV.has_key?("DISABLE_RAILS_PIPELINE_EMISSION")
           RailsPipeline.logger.debug "Skipping outgoing pipeline messages (disabled by env vars)"
           return

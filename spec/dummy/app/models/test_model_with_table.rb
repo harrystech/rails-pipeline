@@ -1,3 +1,4 @@
+require_relative "../../../pipeline_helper"
 require_relative "../../../protobuf/test_emitter_1_1.pb"
 
 class TestModelWithTable < ActiveRecord::Base

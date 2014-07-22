@@ -24,7 +24,7 @@ module RailsPipeline
       @in_progress_queue = _in_progress_queue
 
       @processed = 0
-      @blocking_timeout = 1
+      @blocking_timeout = 2
       @failure_check_interval = 30
       @message_processing_limit = 10 # number of seconds before a message is considered failed
       @failure_last_checked = Time.now - @failure_check_interval.seconds  # TODO: randomize start time?

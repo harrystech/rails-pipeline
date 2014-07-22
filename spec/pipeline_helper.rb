@@ -43,7 +43,7 @@ class TestModel < ActiveRecord::Base
                         extra: "hi")
   end
 
-  def self.from_pipeline_2_0(msg)
+  def self.from_pipeline_2_0(msg, event_type)
     instance = TestModel.new
     instance.foo = msg.foo
     return instance

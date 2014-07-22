@@ -47,7 +47,7 @@ describe RailsPipeline::Subscriber do
       it "should instantiate a target" do
         expect(TestModel).to receive(:new).once.and_call_original
         allow_any_instance_of(TestModel).to receive(:save!)
-        target = @subscriber.handle_payload(@payload)
+        target = @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
         expect(target.foo).to eq @payload.foo
       end
     end
@@ -65,7 +65,7 @@ describe RailsPipeline::Subscriber do
       end
 
       it "should run the proc" do
-        @subscriber.handle_payload(@payload)
+        @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
         expect(@called).to eq true
       end
     end
@@ -77,7 +77,7 @@ describe RailsPipeline::Subscriber do
       end
 
       it "should not instantiate a target" do
-        @subscriber.handle_payload(@payload)
+        @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
       end
     end
   end

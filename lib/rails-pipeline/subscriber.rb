@@ -56,7 +56,7 @@ module RailsPipeline
         end
 
         payload = clazz.parse(payload_str)
-        handle_payload(payload, enveope.event_type)
+        handle_payload(payload, envelope.event_type)
       end
 
       def handle_payload(payload, event_type)

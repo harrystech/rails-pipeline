@@ -9,7 +9,7 @@ module RailsPipeline
       # Allow configuration via initializer
       @@secret = nil
       def _secret
-        @@secret.nil? ?  Rails.application.config.secret_token : @@secret
+        @@secret.nil? ? ENV.fetch("PIPELINE_SECRET", Rails.application.config.secret_token) : @@secret
       end
 
       def secret=(secret)
