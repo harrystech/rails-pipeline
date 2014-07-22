@@ -14,7 +14,9 @@
 ActiveRecord::Schema.define(:version => 20140721203131) do
 
   create_table "test_model_with_tables", :force => true do |t|
-    t.string "foo"
+    t.string   "foo"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
   end
 
 end

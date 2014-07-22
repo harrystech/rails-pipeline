@@ -2,4 +2,5 @@ message TestEmitter__1__1 {
   required int32 id = 1;
   required string foo = 2;
   optional string extrah = 3;
+  optional string created_at = 4;
 }

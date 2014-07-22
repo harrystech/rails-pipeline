@@ -97,11 +97,11 @@ module RailsPipeline
         begin
           case event_type
           when RailsPipeline::EncryptedMessage::EventType::CREATED
-            return target_class(payload).create!(payload.to_hash, without_protection: true)
+            return target_class(payload).create!(_attributes(payload), without_protection: true)
           when RailsPipeline::EncryptedMessage::EventType::UPDATED
             # We might want to allow confiugration of the primary key field
             object = target_class(payload).find(payload.id)
-            object.update_attributes!(payload.to_hash, without_protection: true)
+            object.update_attributes!(_attributes(payload), without_protection: true)
             return object
           when RailsPipeline::EncryptedMessage::EventType::DELETED
             object = target_class(payload).find(payload.id)
@@ -120,6 +120,16 @@ module RailsPipeline
       def _version(payload)
         _, version = payload.class.name.split('_', 2)
         return version
+      end
+
+      def _attributes(payload)
+        attributes_hash = payload.to_hash
+        attributes_hash.each do |attribute_name, value|
+          if attribute_name.match /_at$/
+            attributes_hash[attribute_name] = Time.at(value).to_datetime
+          end
+        end
+        return attributes_hash
       end
 
     end

@@ -154,5 +154,20 @@ describe RailsPipeline::Subscriber do
       end
     end
   end
+
+  describe 'attributes' do
+    let(:subscriber) { TestSubscriber.new }
+    let(:test_model) { TestModelWithTable.new({foo: 'bar'}, without_protection: true) }
+    let(:test_message) { test_model.create_message("1_1", event) }
+    let(:payload_str) { subscriber.class.decrypt(test_message) }
+    let(:clazz) { Object.const_get(test_message.type_info) }
+    let(:payload) { clazz.parse(payload_str) }
+    let(:event) { RailsPipeline::EncryptedMessage::EventType::CREATED }
+
+    it 'converts datetime correctly' do
+      test_model.save!
+      subscriber._attributes(payload)[:created_at].should be_an_instance_of(DateTime)
+    end
+  end
 end
 
