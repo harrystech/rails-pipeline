@@ -40,15 +40,34 @@ describe RailsPipeline::Subscriber do
         RailsPipeline::Subscriber.register(TestEmitter_2_0, TestModel)
       end
 
-      it "should map to the right target" do
-        expect(@subscriber.target_class(@payload)).to eq TestModel
+      context 'without handler' do
+        it "should map to the right target" do
+          expect(@subscriber.target_class(@payload)).to eq TestModel
+        end
+
+        it "should instantiate a target" do
+          expect(TestModel).to receive(:new).once.and_call_original
+          expect(TestModel).to receive(:from_pipeline_2_0).once.and_call_original
+          allow_any_instance_of(TestModel).to receive(:save!)
+          target = @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
+          expect(target.foo).to eq @payload.foo
+        end
       end
 
-      it "should instantiate a target" do
-        expect(TestModel).to receive(:new).once.and_call_original
-        allow_any_instance_of(TestModel).to receive(:save!)
-        target = @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
-        expect(target.foo).to eq @payload.foo
+      context 'with a handler' do
+        before do
+          RailsPipeline::Subscriber.register(
+            TestEmitter_2_0, TestModel, RailsPipeline::SubscriberHandler::ActiveRecordCRUD)
+        end
+
+        it 'should map to the correct handler' do
+          expect(@subscriber.target_handler(@payload)).to eq(RailsPipeline::SubscriberHandler::ActiveRecordCRUD)
+        end
+
+        it 'should call the correct handler' do
+          expect_any_instance_of(RailsPipeline::SubscriberHandler::ActiveRecordCRUD).to receive(:handle_payload).once
+          target = @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
+        end
       end
     end
 
@@ -82,92 +101,5 @@ describe RailsPipeline::Subscriber do
     end
   end
 
-  describe 'handle payload event type' do
-    let(:subscriber) { TestSubscriber.new }
-    let(:test_message) { test_model.create_message("1_1", event) }
-    let(:payload_str) { subscriber.class.decrypt(test_message) }
-    let(:clazz) { Object.const_get(test_message.type_info) }
-    let(:payload) { clazz.parse(payload_str) }
-
-    before(:each) do
-      RailsPipeline::Subscriber.register(TestEmitter_1_1, TestModelWithTable)
-    end
-
-    after(:each) { TestModelWithTable.delete_all }
-
-    context 'CREATED' do
-      let(:event) { RailsPipeline::EncryptedMessage::EventType::CREATED }
-      let(:test_model) { TestModelWithTable.new({id: 42, foo: 'bar'}, without_protection: true) }
-
-      it "should create an object" do
-        expect {
-          subscriber.handle_object_action(payload, event)
-        }.to change(TestModelWithTable, :count).by(1)
-      end
-
-      it "should create with correct attributes" do
-        new_object = subscriber.handle_object_action(payload, event)
-        new_object.should be_persisted
-        new_object.id.should eq(42)
-        new_object.foo.should eq('bar')
-      end
-
-      it "should log if creation failed" do
-        TestModelWithTable.create({id: 42}, without_protection: true)
-        RailsPipeline.logger.should_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
-        subscriber.handle_object_action(payload, event)
-      end
-    end
-
-    context 'UPDATED' do
-      let(:event) { RailsPipeline::EncryptedMessage::EventType::UPDATED }
-      let(:test_model) { TestModelWithTable.new({id: 42, foo: 'bar'}, without_protection: true) }
-
-      it "should update existing object" do
-        test_model.save!
-        test_model.foo = 'qux'
-        object = subscriber.handle_object_action(payload, event)
-        object.should be_persisted
-        object.id.should eq(42)
-        object.foo.should eq('qux')
-      end
-
-      it "should log if update failed" do
-        RailsPipeline.logger.should_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
-        subscriber.handle_object_action(payload, event)
-      end
-    end
-
-    context 'DELETED' do
-      let(:event) { RailsPipeline::EncryptedMessage::EventType::DELETED }
-      let(:test_model) { TestModelWithTable.new({id: 42, foo: 'bar'}, without_protection: true) }
-
-      it "should update existing object" do
-        test_model.save!
-        object = subscriber.handle_object_action(payload, event)
-        object.should be_destroyed
-      end
-
-      it "should log if update failed" do
-        RailsPipeline.logger.should_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
-        subscriber.handle_object_action(payload, event)
-      end
-    end
-  end
-
-  describe 'attributes' do
-    let(:subscriber) { TestSubscriber.new }
-    let(:test_model) { TestModelWithTable.new({foo: 'bar'}, without_protection: true) }
-    let(:test_message) { test_model.create_message("1_1", event) }
-    let(:payload_str) { subscriber.class.decrypt(test_message) }
-    let(:clazz) { Object.const_get(test_message.type_info) }
-    let(:payload) { clazz.parse(payload_str) }
-    let(:event) { RailsPipeline::EncryptedMessage::EventType::CREATED }
-
-    it 'converts datetime correctly' do
-      test_model.save!
-      subscriber._attributes(payload)[:created_at].should be_an_instance_of(DateTime)
-    end
-  end
 end
 
