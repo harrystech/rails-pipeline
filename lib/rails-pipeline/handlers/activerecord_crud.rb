@@ -1,14 +1,6 @@
 module RailsPipeline
   module SubscriberHandler
-    class ActiveRecordCRUD
-      attr_reader :payload, :event_type, :target_class
-
-      def initialize(payload, target_class, event_type)
-        @payload = payload
-        @target_class = target_class
-        @event_type = event_type
-      end
-
+    class ActiveRecordCRUD < BaseHandler
       def handle_payload
         begin
           case event_type

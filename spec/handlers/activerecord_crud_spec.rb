@@ -3,7 +3,10 @@ require 'pipeline_helper'
 
 describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
   describe 'handle payload event type' do
-    let(:handler) { RailsPipeline::SubscriberHandler::ActiveRecordCRUD.new(payload, subscriber.target_class(payload), event) }
+    let(:handler) {
+      RailsPipeline::SubscriberHandler::ActiveRecordCRUD.new(
+        payload, target_class: subscriber.target_class(payload), event_type: event)
+    }
     let(:subscriber) { TestSubscriber.new }
     let(:test_message) { test_model.create_message("1_1", event) }
     let(:payload_str) { subscriber.class.decrypt(test_message) }
@@ -77,7 +80,10 @@ describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
   end
 
   describe 'attributes' do
-    let(:handler) { RailsPipeline::SubscriberHandler::ActiveRecordCRUD.new(payload, subscriber.target_class(payload), event) }
+    let(:handler) {
+      RailsPipeline::SubscriberHandler::ActiveRecordCRUD.new(
+      payload, target_class: subscriber.target_class(payload), event_type: event)
+    }
     let(:subscriber) { TestSubscriber.new }
     let(:test_model) { TestModelWithTable.new({foo: 'bar'}, without_protection: true) }
     let(:test_message) { test_model.create_message("1_1", event) }

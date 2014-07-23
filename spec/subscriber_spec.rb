@@ -6,7 +6,7 @@ describe RailsPipeline::Subscriber do
   before do
     @test_emitter = TestEmitter.new({foo: "bar"}, without_protection: true)
 
-    @test_message = @test_emitter.create_message("2_0", false)
+    @test_message = @test_emitter.create_message("2_0", RailsPipeline::EncryptedMessage::EventType::CREATED)
     @subscriber = TestSubscriber.new
   end
 
@@ -49,7 +49,7 @@ describe RailsPipeline::Subscriber do
           expect(TestModel).to receive(:new).once.and_call_original
           expect(TestModel).to receive(:from_pipeline_2_0).once.and_call_original
           allow_any_instance_of(TestModel).to receive(:save!)
-          target = @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
+          target = @subscriber.handle_payload(@payload, @test_message)
           expect(target.foo).to eq @payload.foo
         end
       end
@@ -66,7 +66,7 @@ describe RailsPipeline::Subscriber do
 
         it 'should call the correct handler' do
           expect_any_instance_of(RailsPipeline::SubscriberHandler::ActiveRecordCRUD).to receive(:handle_payload).once
-          target = @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
+          target = @subscriber.handle_payload(@payload, @test_message)
         end
       end
     end
@@ -84,7 +84,7 @@ describe RailsPipeline::Subscriber do
       end
 
       it "should run the proc" do
-        @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
+        @subscriber.handle_payload(@payload, @test_message)
         expect(@called).to eq true
       end
     end
@@ -96,7 +96,7 @@ describe RailsPipeline::Subscriber do
       end
 
       it "should not instantiate a target" do
-        @subscriber.handle_payload(@payload, RailsPipeline::EncryptedMessage::EventType::CREATED)
+        @subscriber.handle_payload(@payload, @test_message)
       end
     end
   end

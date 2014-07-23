@@ -1,6 +1,5 @@
 
 require "rails-pipeline/symmetric_encryptor"
-require "rails-pipeline/handlers/activerecord_crud"
 
 module RailsPipeline
   module Subscriber
@@ -51,13 +50,14 @@ module RailsPipeline
         end
 
         payload = clazz.parse(payload_str)
-        handle_payload(payload, envelope.event_type)
+        handle_payload(payload, envelope)
       end
 
-      def handle_payload(payload, event_type)
+      def handle_payload(payload, envelope)
         version = _version(payload)
         clazz = target_class(payload)
         handler = target_handler(payload)
+        event_type = envelope.event_type
         method = "from_pipeline_#{version}".to_sym
 
         if clazz.nil?
@@ -68,7 +68,8 @@ module RailsPipeline
 
         if clazz.is_a?(Class)
           if handler
-            handler.new(payload, clazz, event_type).handle_payload
+            # If a built in handler is registered, then just use it
+            handler.new(payload, target_class: clazz, envelope: envelope).handle_payload
           elsif clazz.methods.include?(method)
             # Target class had a from_pipeline method, so just call it and move on
             target = clazz.send(method, payload, event_type)
@@ -80,7 +81,6 @@ module RailsPipeline
           return clazz.call(payload)
         end
       end
-
 
       def target_class(payload)
         RailsPipeline::Subscriber.target_class(payload.class)
