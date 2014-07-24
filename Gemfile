@@ -21,5 +21,6 @@ group :development, :test do
   gem "rspec-rails"
   gem "activerecord-tableless"
   gem "pry"
+  gem "pry-byebug"
   gem "timecop"
 end

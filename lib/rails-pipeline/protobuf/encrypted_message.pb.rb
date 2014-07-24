@@ -31,6 +31,7 @@ module RailsPipeline
     optional :string, :type_info, 6
     optional :string, :topic, 7
     optional ::RailsPipeline::EncryptedMessage::EventType, :event_type, 8, :default => ::RailsPipeline::EncryptedMessage::EventType::CREATED
+    required :string, :api_key, 9
   end
 
 end

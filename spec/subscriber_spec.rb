@@ -21,6 +21,39 @@ describe RailsPipeline::Subscriber do
     expect{@subscriber.handle_envelope(@test_message)}.to raise_error
   end
 
+  describe 'api_key' do
+    before do
+      @test_message = @test_emitter.create_message("2_0", RailsPipeline::EncryptedMessage::EventType::CREATED)
+    end
+
+    context 'with wrong api key' do
+      it "should drop messages" do
+        @test_message.api_key = '123XYZ'
+        expect{@subscriber.handle_envelope(@test_message)}.to raise_error(RailsPipeline::Subscriber::WrongApiKeyError)
+      end
+    end
+
+    context 'with no api key' do
+      it "should drop messages" do
+        @test_message.api_key = nil
+        expect{@subscriber.handle_envelope(@test_message)}.to raise_error(RailsPipeline::Subscriber::NoApiKeyError)
+      end
+    end
+
+    context 'with a correct api key' do
+      it "should accept the envelope with correct api_key" do
+        stub_const('ENV', {'PIPELINE_API_KEYS' => '123XYZ'})
+        @test_message.api_key = '123XYZ'
+        expect{@subscriber.handle_envelope(@test_message)}.not_to raise_error
+      end
+
+      it "should accept the envelope with any correct api_key" do
+        stub_const('ENV', {'PIPELINE_API_KEYS' => '123XYZ,456UVW'})
+        @test_message.api_key = '456UVW'
+        expect{@subscriber.handle_envelope(@test_message)}.not_to raise_error
+      end
+    end
+  end
 
   context "with decrypted payload" do
     before do

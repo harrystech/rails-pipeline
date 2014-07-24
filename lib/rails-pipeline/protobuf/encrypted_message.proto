@@ -14,4 +14,5 @@ message EncryptedMessage {
 		DELETED = 2;
 	}
 	optional EventType event_type = 8 [default = CREATED];    // indicates what kind of event this payload contains
+	required string api_key = 9;
 }

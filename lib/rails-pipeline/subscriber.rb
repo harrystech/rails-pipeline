@@ -2,7 +2,13 @@
 require "rails-pipeline/symmetric_encryptor"
 
 module RailsPipeline
+
   module Subscriber
+
+    Error = Class.new(StandardError)
+    NoApiKeyError = Class.new(Error)
+    WrongApiKeyError = Class.new(Error)
+
     class << self
       @@registered_models = {}
       @@registered_handlers = {}
@@ -41,6 +47,7 @@ module RailsPipeline
           RailsPipeline.logger.debug "Skipping incoming pipeline messages (disabled by env vars)"
           return
         end
+        verify_api_key(envelope)
         payload_str = self.class.decrypt(envelope)
         begin
           clazz = Object.const_get(envelope.type_info)
@@ -82,6 +89,18 @@ module RailsPipeline
         end
       end
 
+      def verify_api_key(envelope)
+        if envelope.api_key.present?
+          if _api_keys.include?(envelope.api_key)
+            return true
+          else
+            raise WrongApiKeyError.new
+          end
+        else
+          raise NoApiKeyError.new
+        end
+      end
+
       def target_class(payload)
         RailsPipeline::Subscriber.target_class(payload.class)
       end
@@ -93,6 +112,10 @@ module RailsPipeline
       def _version(payload)
         _, version = payload.class.name.split('_', 2)
         return version
+      end
+
+      def _api_keys
+        return ENV.fetch('PIPELINE_API_KEYS', "").split(',')
       end
 
     end

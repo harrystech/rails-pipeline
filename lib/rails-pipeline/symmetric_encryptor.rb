@@ -4,7 +4,15 @@
 require "rails-pipeline/protobuf/encrypted_message.pb"
 
 module RailsPipeline
+
   module SymmetricEncryptor
+    Error = Class.new(StandardError)
+    NoApiKeyError = Class.new(Error) do
+      def message
+        "You need to set the env variable PIPELINE_API_KEY to emit messages"
+      end
+    end
+
     class << self
       # Allow configuration via initializer
       @@secret = nil
@@ -14,6 +22,19 @@ module RailsPipeline
 
       def secret=(secret)
         @@secret = secret
+      end
+
+      @@api_key = nil
+      def _api_key
+        api_key = @@api_key.nil? ? ENV["PIPELINE_API_KEY"] : @@api_key
+        if api_key.blank?
+          raise NoApiKeyError.new
+        end
+        return api_key
+      end
+
+      def api_key=(api_key)
+        @@api_key = api_key
       end
     end
 
@@ -52,6 +73,7 @@ module RailsPipeline
           type_info: type_info,
           topic: topic,
           event_type: _event_type_value(event_type),
+          api_key: _api_key,
         )
       end
 
@@ -76,6 +98,10 @@ module RailsPipeline
 
       def _secret
         RailsPipeline::SymmetricEncryptor._secret
+      end
+
+      def _api_key
+        RailsPipeline::SymmetricEncryptor._api_key
       end
 
       def _key(salt)
