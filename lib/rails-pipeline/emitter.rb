@@ -15,9 +15,8 @@ module RailsPipeline
       base.after_commit :emit_on_destroy, on: :destroy
 
       if RailsPipeline::HAS_NEWRELIC
-        base.send :include, ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
-        base.extend  ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
-        base.add_transaction_tracer :emit, category: :task
+        base.send :include, ::NewRelic::Agent::MethodTracer
+        base.add_method_tracer :emit, 'Pipeline/Emitter/emit'
       end
     end
 
