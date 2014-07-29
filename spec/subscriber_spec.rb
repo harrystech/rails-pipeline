@@ -65,7 +65,7 @@ describe RailsPipeline::Subscriber do
     it "should get the version right" do
       expect(@payload.class.name).to eq "TestEmitter_2_0"
       version = @subscriber._version(@payload)
-      expect(version).to eq "2_0"
+      expect(version).to eq RailsPipeline::PipelineVersion.new("2_0")
     end
 
     context "with registered target class" do
@@ -130,6 +130,67 @@ describe RailsPipeline::Subscriber do
 
       it "should not instantiate a target" do
         @subscriber.handle_payload(@payload, @test_message)
+      end
+    end
+  end
+
+  describe '#most_suitable_method' do
+    let(:subscriber) { TestSubscriber.new }
+    let(:fake_class) { Class.new }
+    before do
+      stub_const("TestClass", fake_class)
+    end
+
+    context 'when receiver class has the correct version method' do
+      before do
+        TestClass.define_singleton_method(:from_pipeline_1_1) { }
+      end
+      let(:version) { RailsPipeline::PipelineVersion.new('1_1') }
+      it 'picks the method' do
+        subscriber.most_suitable_handler_method_name(version, TestClass).should eq(:from_pipeline_1_1)
+      end
+    end
+
+    context 'when receiver class has a handler with same major and lower minor handler method' do
+      before do
+        TestClass.define_singleton_method(:from_pipeline_1_0) { }
+      end
+      let(:version) { RailsPipeline::PipelineVersion.new('1_1') }
+      it 'picks the method' do
+        subscriber.most_suitable_handler_method_name(version, TestClass).should eq(:from_pipeline_1_0)
+      end
+    end
+
+    context 'when receiver has multiple methods defined' do
+      before do
+        TestClass.define_singleton_method(:from_pipeline_1_0) { }
+        TestClass.define_singleton_method(:from_pipeline_1_5) { }
+        TestClass.define_singleton_method(:from_pipeline_1_2) { }
+        TestClass.define_singleton_method(:from_pipeline_1_1) { }
+      end
+      let(:version) { RailsPipeline::PipelineVersion.new('1_4') }
+      it 'picks the closest lower method' do
+        subscriber.most_suitable_handler_method_name(version, TestClass).should eq(:from_pipeline_1_2)
+      end
+    end
+
+    context 'when receiver has multiple methods defined' do
+      before do
+        TestClass.define_singleton_method(:from_pipeline_1_2) { }
+        TestClass.define_singleton_method(:from_pipeline_1_0) { }
+        TestClass.define_singleton_method(:from_pipeline_1_4) { }
+        TestClass.define_singleton_method(:from_pipeline_1_5) { }
+      end
+      let(:version) { RailsPipeline::PipelineVersion.new('1_4') }
+      it 'picks the closest lower method' do
+        subscriber.most_suitable_handler_method_name(version, TestClass).should eq(:from_pipeline_1_4)
+      end
+    end
+
+    context 'when receiver class does not have a handler method' do
+      let(:version) { RailsPipeline::PipelineVersion.new('1_1') }
+      it 'returns nil' do
+        subscriber.most_suitable_handler_method_name(version, TestClass).should be_nil
       end
     end
   end

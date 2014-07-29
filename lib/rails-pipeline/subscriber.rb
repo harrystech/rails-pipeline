@@ -41,7 +41,8 @@ module RailsPipeline
 
     module InstanceMethods
 
-      # Take an EncryptedMessage envelope, and
+      # Take an EncryptedMessage envelope, and decrypt the cipher text, then
+      # get the protobuf object out of it
       def handle_envelope(envelope)
         if ENV.has_key?("DISABLE_RAILS_PIPELINE") || ENV.has_key?("DISABLE_RAILS_PIPELINE_PROCESSING")
           RailsPipeline.logger.debug "Skipping incoming pipeline messages (disabled by env vars)"
@@ -60,33 +61,43 @@ module RailsPipeline
         handle_payload(payload, envelope)
       end
 
+      # Take a protobuf object (payload) and forward it to the appropriate
+      # handler/method/proc
       def handle_payload(payload, envelope)
         version = _version(payload)
         clazz = target_class(payload)
-        handler = target_handler(payload)
+        handler_class = target_handler(payload)
         event_type = envelope.event_type
-        method = "from_pipeline_#{version}".to_sym
+        method = most_suitable_handler_method_name(version, clazz)
 
         if clazz.nil?
           # This message type is not registered for this app
           RailsPipeline.logger.info "Dropping unclaimed message #{payload.class.name}"
           return
         end
-
         if clazz.is_a?(Class)
-          if handler
-            # If a built in handler is registered, then just use it
-            handler.new(payload, target_class: clazz, envelope: envelope).handle_payload
-          elsif clazz.methods.include?(method)
+          if handler_class
+            # If a built in handler_class is registered, then just use it
+            handler_class.new(payload, target_class: clazz, envelope: envelope).handle_payload
+          elsif method
             # Target class had a from_pipeline method, so just call it and move on
             target = clazz.send(method, payload, event_type)
           else
             RailsPipeline.logger.info "No handler set, dropping message #{payload.class.name}"
           end
           return target
-        elsif clazz.is_a? Proc
+        elsif clazz.is_a?(Proc)
           return clazz.call(payload)
         end
+      end
+
+      def most_suitable_handler_method_name(version, receiver_class)
+        # Returns the closest lower implemented method in target_class for the given version
+        available_methods = receiver_class.methods.grep(%r{from_pipeline_#{version.major}})
+          .reject { |method_name| method_name.to_s.split('_').last.to_i > version.minor }
+          .sort
+          .reverse
+        return available_methods.first
       end
 
       def verify_api_key(envelope)
@@ -111,7 +122,7 @@ module RailsPipeline
 
       def _version(payload)
         _, version = payload.class.name.split('_', 2)
-        return version
+        return RailsPipeline::PipelineVersion.new(version)
       end
 
       def _api_keys

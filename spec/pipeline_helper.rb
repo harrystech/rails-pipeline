@@ -7,7 +7,7 @@ require_relative "protobuf/test_emitter_2_0.pb"
 
 module DummyPublisher
   def self.included(base)
-    #base.extend PublisherClassMethods
+    # base.extend PublisherClassMethods
     base.send :include, PublisherInstanceMethods
   end
 
