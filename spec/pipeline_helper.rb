@@ -113,3 +113,7 @@ end
 class TestSubscriber
   include RailsPipeline::Subscriber
 end
+
+class OtherSubscriber
+  include RailsPipeline::Subscriber
+end

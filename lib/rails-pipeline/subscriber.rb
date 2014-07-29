@@ -10,8 +10,10 @@ module RailsPipeline
     WrongApiKeyError = Class.new(Error)
 
     class << self
+
       @@registered_models = {}
       @@registered_handlers = {}
+
       def register(payload_class, target_class, handler = nil)
         @@registered_models[payload_class] = target_class
         @@registered_handlers[payload_class] = handler
@@ -24,6 +26,7 @@ module RailsPipeline
       def target_handler(payload_class)
         @@registered_handlers[payload_class]
       end
+
     end
 
 
@@ -93,10 +96,17 @@ module RailsPipeline
 
       def most_suitable_handler_method_name(version, receiver_class)
         # Returns the closest lower implemented method in target_class for the given version
-        available_methods = receiver_class.methods.grep(%r{from_pipeline_#{version.major}})
+        cached_method = self.class.handler_method_cache[version]
+        if cached_method
+          return cached_method
+        end
+        available_methods = receiver_class.methods.grep(%r{^from_pipeline_#{version.major}})
           .reject { |method_name| method_name.to_s.split('_').last.to_i > version.minor }
           .sort
           .reverse
+
+        # cache handler method for this version
+        self.class.handler_method_cache[version] = available_methods.first
         return available_methods.first
       end
 
@@ -132,6 +142,15 @@ module RailsPipeline
     end
 
     module ClassMethods
+
+
+      def handler_method_cache
+        @handler_method_cache ||= {}
+      end
+
+      def handler_method_cache=(cache)
+        @handler_method_cache = cache
+      end
     end
   end
 end

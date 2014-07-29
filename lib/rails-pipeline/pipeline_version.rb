@@ -28,5 +28,13 @@ module RailsPipeline
       end
     end
 
+    def eql?(other)
+      return to_s.eql?(other.to_s)
+    end
+
+    def hash
+      return to_s.hash
+    end
+
   end
 end

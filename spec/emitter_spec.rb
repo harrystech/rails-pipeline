@@ -8,6 +8,9 @@ describe RailsPipeline::Emitter do
     @test_emitter = TestEmitter.new({foo: "bar"}, without_protection: true)
     @test_model = TestModelWithTable.new
     @default_emitter = DefaultEmitter.new({foo: "baz"}, without_protection: true)
+    TestModelWithTable.pipeline_method_cache = {}
+    TestEmitter.pipeline_method_cache = {}
+    DefaultEmitter.pipeline_method_cache = {}
   end
 
   it "should derive the topic name" do
@@ -109,6 +112,29 @@ describe RailsPipeline::Emitter do
           expect(message.event_type).to eq(RailsPipeline::EncryptedMessage::EventType::DELETED)
         end
         @test_model.destroy
+      end
+    end
+  end
+
+  context 'methods cache' do
+    context 'empty cache' do
+      before { @test_model.save! }
+      it 'caches the pipeline versions' do
+        TestModelWithTable.pipeline_method_cache[RailsPipeline::PipelineVersion.new('1_1')].should eq(:to_pipeline_1_1)
+      end
+    end
+
+    context 'non empty cache' do
+
+      before do
+        # warms the cache
+        TestModelWithTable.pipeline_versions
+      end
+      it "reads from cache" do
+        version = RailsPipeline::PipelineVersion.new('1_1')
+        TestModelWithTable.should_not_receive(:instance_methods)
+        # TestModelWithTable.pipeline_method_cache.should_receive(:[]).with(version).once.and_call_original
+        @test_model.save!
       end
     end
   end

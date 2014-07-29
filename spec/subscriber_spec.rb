@@ -8,6 +8,8 @@ describe RailsPipeline::Subscriber do
 
     @test_message = @test_emitter.create_message("2_0", RailsPipeline::EncryptedMessage::EventType::CREATED)
     @subscriber = TestSubscriber.new
+    TestSubscriber.handler_method_cache = {}
+    OtherSubscriber.handler_method_cache = {}
   end
 
   it "should handle correct messages" do
@@ -139,6 +141,8 @@ describe RailsPipeline::Subscriber do
     let(:fake_class) { Class.new }
     before do
       stub_const("TestClass", fake_class)
+      # Clear TestSubscriber cache
+      TestSubscriber.handler_method_cache = {}
     end
 
     context 'when receiver class has the correct version method' do
@@ -191,6 +195,62 @@ describe RailsPipeline::Subscriber do
       let(:version) { RailsPipeline::PipelineVersion.new('1_1') }
       it 'returns nil' do
         subscriber.most_suitable_handler_method_name(version, TestClass).should be_nil
+      end
+    end
+  end
+
+  context 'methods cache' do
+    let(:subscriber) { TestSubscriber.new }
+    let(:other_subscriber) { OtherSubscriber.new }
+    let(:version) { RailsPipeline::PipelineVersion.new('1_1') }
+    let(:fake_class) { Class.new }
+    before do
+      stub_const("TestClass", fake_class)
+      TestClass.define_singleton_method(:from_pipeline_1_0) { }
+    end
+
+    it 'exists' do
+      TestSubscriber.handler_method_cache.should_not be_nil
+    end
+
+    context 'with empty cache' do
+
+      it 'caches method handler for version' do
+        subscriber.most_suitable_handler_method_name(version, TestClass)
+        TestSubscriber.handler_method_cache[version].should eq(:from_pipeline_1_0)
+      end
+    end
+
+    context 'with non empty cache' do
+      before do
+        # warms the cache
+        subscriber.most_suitable_handler_method_name(version, TestClass)
+      end
+
+      it "reads value from cache" do
+        TestClass.should_not_receive(:methods)
+        TestSubscriber.handler_method_cache.should_receive(:[]).with(version).once.and_call_original
+        subscriber.most_suitable_handler_method_name(version, TestClass)
+      end
+    end
+
+    context 'cache is attached to each class' do
+      let(:fake_class2) { Class.new }
+      before do
+        stub_const("TestClass2", fake_class2)
+        TestClass2.define_singleton_method(:from_pipeline_1_1) { }
+        TestClass2.define_singleton_method(:from_pipeline_2_0) { }
+      end
+      let(:v1_1) { RailsPipeline::PipelineVersion.new('1_1') }
+      let(:v2_0) { RailsPipeline::PipelineVersion.new('2_0') }
+
+      it 'caches methods in separate buckets' do
+        subscriber.most_suitable_handler_method_name(v1_1, TestClass)
+        other_subscriber.most_suitable_handler_method_name(v1_1, TestClass2)
+        other_subscriber.most_suitable_handler_method_name(v2_0, TestClass2)
+        TestSubscriber.handler_method_cache != OtherSubscriber.handler_method_cache
+        TestSubscriber.handler_method_cache.length.should eq(1)
+        OtherSubscriber.handler_method_cache.length.should eq(2)
       end
     end
   end

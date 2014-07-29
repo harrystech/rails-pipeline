@@ -1,5 +1,6 @@
 require_relative "../../../pipeline_helper"
 require_relative "../../../protobuf/test_emitter_1_1.pb"
+require_relative "../../../protobuf/test_emitter_2_0.pb"
 
 class TestModelWithTable < ActiveRecord::Base
   include RailsPipeline::Emitter

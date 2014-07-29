@@ -63,6 +63,9 @@ module RailsPipeline
     module ClassMethods
       # Get the list of versions to emit (all that are implemented, basically)
       def pipeline_versions
+        if pipeline_method_cache.any?
+          return pipeline_method_cache.keys
+        end
         versions = []
         pipeline_methods = instance_methods.grep(/^to_pipeline/).sort
         pipeline_methods.each do |pipeline_method|
@@ -72,6 +75,7 @@ module RailsPipeline
             i = versions.index("1_0")
             versions.delete_at(i) if !i.nil?
           end
+          pipeline_method_cache[version] = pipeline_method
           versions << version
         end
         return versions
@@ -94,6 +98,14 @@ module RailsPipeline
 
       def _secret
         ENV.fetch("PIPELINE_SECRET", Rails.application.config.secret_token)
+      end
+
+      def pipeline_method_cache
+        @pipeline_method_cache ||= {}
+      end
+
+      def pipeline_method_cache=(cache)
+        @pipeline_method_cache = cache
       end
 
     end
