@@ -105,7 +105,7 @@ module RailsPipeline
       end
 
       def _key(salt)
-        iter = 20000
+        iter = 10000
         key_len = 32
         key = OpenSSL::PKCS5.pbkdf2_hmac_sha1(_secret, salt, iter, key_len)
         return key
