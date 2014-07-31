@@ -7,6 +7,7 @@ env:
       - secure: XNOAAi4l02PQS8F0pYLmv3GNbUzZed4/Mpzzv++3AGSApX4Hq/W9jpMxkHakBH4oUvvvnw5G4Xpa/EqhahZnlaTxVifzFBhMOr1mo6NxzQ1ZT6vCiAgY1lgWhpT9v2YYvT8W0bEhGWwrNyF7kdqWX3fje341C3KXakFELl5+Y2o=
 services:
     - redis-server
+before_script: RAILS_ENV=test bundle exec rake app:db:reset
 script: bundle exec rspec spec
 notifications:
   hipchat:

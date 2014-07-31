@@ -13,11 +13,6 @@ module RailsPipeline::IronmqPublisher
   def self.included(base)
     base.send :include, InstanceMethods
     base.extend ClassMethods
-    if RailsPipeline::HAS_NEWRELIC
-      base.send :include, ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
-      base.extend  ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
-      base.add_transaction_tracer :publish, category: :task
-    end
   end
 
   module InstanceMethods
@@ -26,6 +21,7 @@ module RailsPipeline::IronmqPublisher
       queue = _iron.queue(topic_name)
       queue.post(data)
       t1 = Time.now
+      ::NewRelic::Agent.record_metric('Pipeline/IronMQ/publish', t1-t0) if RailsPipeline::HAS_NEWRELIC
       RailsPipeline.logger.debug "Publishing to IronMQ: #{topic_name} took #{t1-t0}s"
     end
 

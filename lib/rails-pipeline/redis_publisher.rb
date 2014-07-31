@@ -42,11 +42,6 @@ module RailsPipeline
     def self.included(base)
       base.extend ClassMethods
       base.send :include, InstanceMethods
-      if RailsPipeline::HAS_NEWRELIC
-        base.send :include, ::NewRelic::Agent::Instrumentation::ControllerInstrumentation
-        base.extend  ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
-        base.add_transaction_tracer :publish, category: :task
-      end
     end
 
     module InstanceMethods
@@ -54,6 +49,7 @@ module RailsPipeline
         t0 = Time.now
         _redis.lpush(_key, data)
         t1 = Time.now
+        ::NewRelic::Agent.record_metric('Pipeline/Redis/publish', t1-t0) if RailsPipeline::HAS_NEWRELIC
         RailsPipeline.logger.debug "Publishing to redis '#{topic_name}' took #{t1-t0}s"
       end
 

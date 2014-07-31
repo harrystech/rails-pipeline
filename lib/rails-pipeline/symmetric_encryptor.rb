@@ -4,20 +4,47 @@
 require "rails-pipeline/protobuf/encrypted_message.pb"
 
 module RailsPipeline
+
   module SymmetricEncryptor
+    Error = Class.new(StandardError)
+    NoApiKeyError = Class.new(Error) do
+      def message
+        "You need to set the env variable PIPELINE_API_KEY to emit messages"
+      end
+    end
+
+    class << self
+      # Allow configuration via initializer
+      @@secret = nil
+      def _secret
+        @@secret.nil? ? ENV.fetch("PIPELINE_SECRET", Rails.application.config.secret_token) : @@secret
+      end
+
+      def secret=(secret)
+        @@secret = secret
+      end
+
+      @@api_key = nil
+      def _api_key
+        api_key = @@api_key.nil? ? ENV["PIPELINE_API_KEY"] : @@api_key
+        if api_key.blank?
+          raise NoApiKeyError.new
+        end
+        return api_key
+      end
+
+      def api_key=(api_key)
+        @@api_key = api_key
+      end
+    end
 
     def self.included(base)
       base.extend ClassMethods
-      # Inject a class variable
-      class << base
-        @@secret = nil
-      end
-      #base.send :include, InstanceMethods
     end
 
     module ClassMethods
 
-      def encrypt(plaintext, owner_info: nil, type_info: nil, topic: nil, destroyed: false)
+      def encrypt(plaintext, owner_info: nil, type_info: nil, topic: nil, event_type: nil)
         # Inititalize a symmetric cipher for encryption
         cipher = OpenSSL::Cipher::AES256.new(:CBC)
         cipher.encrypt
@@ -45,7 +72,8 @@ module RailsPipeline
           owner_info: owner_info,
           type_info: type_info,
           topic: topic,
-          destroyed: destroyed
+          event_type: _event_type_value(event_type),
+          api_key: _api_key,
         )
       end
 
@@ -69,14 +97,29 @@ module RailsPipeline
       end
 
       def _secret
-        @@secret.nil? ?  Rails.application.config.secret_token : @@secret
+        RailsPipeline::SymmetricEncryptor._secret
+      end
+
+      def _api_key
+        RailsPipeline::SymmetricEncryptor._api_key
       end
 
       def _key(salt)
-        iter = 20000
+        iter = 10000
         key_len = 32
         key = OpenSSL::PKCS5.pbkdf2_hmac_sha1(_secret, salt, iter, key_len)
         return key
+      end
+
+      def _event_type_value(event_type)
+        case event_type
+        when :create
+          RailsPipeline::EncryptedMessage::EventType::CREATED
+        when :update
+          RailsPipeline::EncryptedMessage::EventType::UPDATED
+        when :destroy
+          RailsPipeline::EncryptedMessage::EventType::DELETED
+        end
       end
 
     end

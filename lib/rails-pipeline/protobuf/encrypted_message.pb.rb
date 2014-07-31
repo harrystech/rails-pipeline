@@ -8,6 +8,19 @@ module RailsPipeline
   class EncryptedMessage < ::ProtocolBuffers::Message; end
 
   class EncryptedMessage < ::ProtocolBuffers::Message
+    # forward declarations
+
+    # enums
+    module EventType
+      include ::ProtocolBuffers::Enum
+
+      set_fully_qualified_name "RailsPipeline.EncryptedMessage.EventType"
+
+      CREATED = 0
+      UPDATED = 1
+      DELETED = 2
+    end
+
     set_fully_qualified_name "RailsPipeline.EncryptedMessage"
 
     required :string, :uuid, 1
@@ -17,7 +30,8 @@ module RailsPipeline
     optional :string, :owner_info, 5
     optional :string, :type_info, 6
     optional :string, :topic, 7
-    optional :bool, :destroyed, 8
+    optional ::RailsPipeline::EncryptedMessage::EventType, :event_type, 8, :default => ::RailsPipeline::EncryptedMessage::EventType::CREATED
+    required :string, :api_key, 9
   end
 
 end

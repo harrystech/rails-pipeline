@@ -7,7 +7,7 @@ require_relative "protobuf/test_emitter_2_0.pb"
 
 module DummyPublisher
   def self.included(base)
-    #base.extend PublisherClassMethods
+    # base.extend PublisherClassMethods
     base.send :include, PublisherInstanceMethods
   end
 
@@ -41,6 +41,12 @@ class TestModel < ActiveRecord::Base
     TestEmitter_2_0.new(id: 1,
                         foo: "modified_#{foo}",
                         extra: "hi")
+  end
+
+  def self.from_pipeline_2_0(msg, event_type)
+    instance = TestModel.new
+    instance.foo = msg.foo
+    return instance
   end
 
   def kinda_attributes
@@ -102,4 +108,12 @@ end
 class DefaultIronmqEmitter < DefaultModel
   include RailsPipeline::Emitter
   include RailsPipeline::IronmqPublisher
+end
+
+class TestSubscriber
+  include RailsPipeline::Subscriber
+end
+
+class OtherSubscriber
+  include RailsPipeline::Subscriber
 end

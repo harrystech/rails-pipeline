@@ -59,3 +59,7 @@ RSpec.configure do |config|
   end
 end
 $redis = ENV["REDISCLOUD_URL"] || ENV["REDISTOGO_URL"] || "localhost:6379"
+# For subscriber
+ENV['PIPELINE_API_KEYS'] = 'ABC,DEF'
+# For emitter
+ENV['PIPELINE_API_KEY'] = 'ABC'

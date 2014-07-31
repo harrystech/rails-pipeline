@@ -1,3 +1,3 @@
-RailsPipeline::RedisPublisher.namespace = "harrys-www-pipeline"
+RailsPipeline::RedisPublisher.namespace = "rails-pipeline-spec"
 
 RailsPipeline.logger = Rails.logger
