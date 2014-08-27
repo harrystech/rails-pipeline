@@ -9,7 +9,7 @@ module RailsPipeline
     post '/' do
       t0 = Time.now
       data = request.body.read
-      envelope = RailsPipeline::EncryptedMessage.parse(data)
+      envelope = RailsPipeline::EncryptedMessage.parse(JSON.parse(data).pack("c*"))
       handle_envelope(envelope)
       t1 = Time.now
       RailsPipeline.logger.debug "Consuming from IronMQ: #{envelope.topic} took #{t1-t0}s"
