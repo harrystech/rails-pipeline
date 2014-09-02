@@ -8,8 +8,10 @@ describe RailsPipeline::IronmqPublisher do
 
   it "should call post for IronMQ" do
     expect_any_instance_of(IronMQ::Queue).to receive(:post) { |instance, serialized_encrypted_data|
-      base64_decoded_data = Base64.strict_decode64(serialized_encrypted_data)
+      base64_decoded_data = Base64.strict_decode64(JSON.parse(serialized_encrypted_data)['payload'])
+
       encrypted_data = RailsPipeline::EncryptedMessage.parse(base64_decoded_data)
+
       serialized_payload = DefaultEmitter.decrypt(encrypted_data)
       data = DefaultEmitter_1_0.parse(serialized_payload)
 
