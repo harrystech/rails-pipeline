@@ -1,5 +1,4 @@
-
-
+require 'base64'
 require 'iron_mq'
 
 # Backend for data pipeline that publishes to IronMQ
@@ -19,7 +18,7 @@ module RailsPipeline::IronmqPublisher
     def publish(topic_name, data)
       t0 = Time.now
       queue = _iron.queue(topic_name)
-      queue.post(data)
+      queue.post({payload: Base64.strict_encode64(data)}.to_json)
       t1 = Time.now
       ::NewRelic::Agent.record_metric('Pipeline/IronMQ/publish', t1-t0) if RailsPipeline::HAS_NEWRELIC
       RailsPipeline.logger.debug "Publishing to IronMQ: #{topic_name} took #{t1-t0}s"
