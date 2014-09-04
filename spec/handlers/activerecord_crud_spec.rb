@@ -41,6 +41,11 @@ describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
         RailsPipeline.logger.should_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
         handler.handle_payload
       end
+
+      context "when a creation request has been received after " do
+          it "should not be applied"
+      end
+
     end
 
     context 'UPDATED' do
@@ -56,10 +61,28 @@ describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
         object.foo.should eq('qux')
       end
 
-      it "should log if update failed" do
-        RailsPipeline.logger.should_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
-        handler.handle_payload
+      it "should log if update failed" #do
+        #pending "A new failure scenario is now needed"
+        #RailsPipeline.logger.should_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
+        #handler.handle_payload
+      #end
+
+      context "when an update is received prior to the record existing" do
+          let(:test_model) { TestModelWithTable.new({id: 77, foo: 'baz'}, without_protection: true) }
+
+          it "should not raise an error" do
+              RailsPipeline.logger.should_not_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
+              handler.handle_payload
+          end
+
+          it "should create the record with the information as is exists in the update" do
+              object = handler.handle_payload
+              object.should be_persisted
+              object.id.should eq(77)
+              object.foo.should eq('baz')
+          end
       end
+
     end
 
     context 'DELETED' do

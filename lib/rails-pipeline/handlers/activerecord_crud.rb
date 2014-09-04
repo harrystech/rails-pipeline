@@ -8,7 +8,7 @@ module RailsPipeline
             return target_class.create!(_attributes(payload), without_protection: true)
           when RailsPipeline::EncryptedMessage::EventType::UPDATED
             # We might want to allow confiugration of the primary key field
-            object = target_class.find(payload.id)
+            object = target_class.where({id: payload.id}).first_or_create!
             object.update_attributes!(_attributes(payload), without_protection: true)
             return object
           when RailsPipeline::EncryptedMessage::EventType::DELETED
