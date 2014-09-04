@@ -1,3 +1,6 @@
+require 'base64'
+require 'json'
+
 module RailsPipeline
     class IronmqPullingSubscriber
         include RailsPipeline::Subscriber
@@ -17,7 +20,10 @@ module RailsPipeline
                     if message.nil?
                         deactivate_subscription
                     else
-                        callback_status = block.call(message)
+                        payload = parse_ironmq_payload(message.body)
+                        envelope = generate_envelope(payload)
+
+                        callback_status = block.call(envelope)
 
                         if callback_status
                             message.delete
@@ -53,6 +59,15 @@ module RailsPipeline
         def _iron
             @iron = IronMQ::Client.new if @iron.nil?
             return @iron
+        end
+
+        def parse_ironmq_payload(message_body)
+            payload = JSON.parse(message_body)["payload"]
+            Base64.strict_decode64(payload)
+        end
+
+        def generate_envelope(payload)
+            RailsPipeline::EncryptedMessage.parse(payload)
         end
 
     end
