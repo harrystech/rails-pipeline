@@ -3,15 +3,19 @@ require 'pipeline_helper'
 
 describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
   describe 'handle payload event type' do
+
+    let(:subscriber) { TestSubscriber.new }
+    let(:test_message) { test_model.create_message("1_1", event) }
+    let(:clazz) { Object.const_get(test_message.type_info) }
+
+    let(:payload_str) { subscriber.class.decrypt(test_message) }
+    #let(:clazz) { Object.const_get(test_message.type_info) }
+
+    let(:payload) { clazz.parse(payload_str) }
     let(:handler) {
       RailsPipeline::SubscriberHandler::ActiveRecordCRUD.new(
         payload, target_class: subscriber.target_class(payload), event_type: event)
     }
-    let(:subscriber) { TestSubscriber.new }
-    let(:test_message) { test_model.create_message("1_1", event) }
-    let(:payload_str) { subscriber.class.decrypt(test_message) }
-    let(:clazz) { Object.const_get(test_message.type_info) }
-    let(:payload) { clazz.parse(payload_str) }
 
     before(:each) do
       RailsPipeline::Subscriber.register(TestEmitter_1_1, TestModelWithTable)
@@ -83,6 +87,46 @@ describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
           end
       end
 
+      context "when an update is received but it is older than the existing record" do
+          let(:subscriber) { TestSubscriber.new }
+          let(:test_message) { test_model.create_message("1_1", event) }
+          let(:clazz) { Object.const_get(test_message.type_info) }
+
+          let(:payload_str) { subscriber.class.decrypt(test_message) }
+          #let(:clazz) { Object.const_get(test_message.type_info) }
+
+          let(:payload) { clazz.parse(payload_str) }
+          let(:handler) {
+              RailsPipeline::SubscriberHandler::ActiveRecordCRUD.new(
+                  payload, target_class: subscriber.target_class(payload), event_type: event)
+          }
+
+
+
+
+          let(:test_model) { TestModelWithTable.new({id: 88, foo: 'bar'}, without_protection: true) }
+
+          before(:each) do
+              test_model.save!
+          end
+
+          it "should not apply the out of date update to the record" do
+              #test_model.save!
+
+              puts "this is our test payload"
+              puts payload.inspect
+              puts "this is our test payload"
+
+
+
+              Timecop.freeze(Date.today - 30) do
+                  test_model.foo = "back to the future"
+                  test_model.save
+                  puts "we are inside of the history  block"
+              end
+
+          end
+      end
     end
 
     context 'DELETED' do
