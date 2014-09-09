@@ -17,18 +17,23 @@ module RailsPipeline
 
             while active_subscription?
                 pull_message do |message|
-                    if message.nil?
-                        deactivate_subscription
-                    else
-                        payload = parse_ironmq_payload(message.body)
-                        envelope = generate_envelope(payload)
+                    process_message(message, block)
+                end
+            end
+        end
 
-                        callback_status = block.call(envelope)
 
-                        if callback_status
-                            message.delete
-                        end
-                    end
+        def process_message(message, block)
+            if message.nil?
+                deactivate_subscription
+            else
+                begin
+                    payload = parse_ironmq_payload(message.body)
+                    envelope = generate_envelope(payload)
+
+                    handle_envelope(envelope,message,block)
+                rescue Exception
+                    deactivate_subscription
                 end
             end
         end
@@ -45,8 +50,14 @@ module RailsPipeline
             @subscription_status = false
         end
 
+        def handle_envelope(envelope,message,block)
+            callback_status = block.call(envelope)
 
-        private
+            if callback_status
+                message.delete
+            end
+        end
+
 
         #the wait time on this may need to be changed
         #haven't seen rate limit info on these calls but didnt look
@@ -55,6 +66,8 @@ module RailsPipeline
             queue = _iron.queue(queue_name)
             yield queue.get(:wait => 2)
         end
+
+        private
 
         def _iron
             @iron = IronMQ::Client.new if @iron.nil?
