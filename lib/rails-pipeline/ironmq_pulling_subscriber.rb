@@ -31,7 +31,7 @@ module RailsPipeline
                     payload = parse_ironmq_payload(message.body)
                     envelope = generate_envelope(payload)
 
-                    handle_envelope(envelope,message,block)
+                    handle_envelope(envelope,message,&block)
                 rescue Exception
                     deactivate_subscription
                 end
