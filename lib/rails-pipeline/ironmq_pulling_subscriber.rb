@@ -31,7 +31,7 @@ module RailsPipeline
                     payload = parse_ironmq_payload(message.body)
                     envelope = generate_envelope(payload)
 
-                    handle_envelope(envelope,message,&block)
+                    process_envelope(envelope, message, block)
                 rescue Exception => e
                     deactivate_subscription
                     raise e
@@ -51,7 +51,7 @@ module RailsPipeline
             @subscription_status = false
         end
 
-        def handle_envelope(envelope,message,block)
+        def process_envelope(envelope, message, block)
             callback_status = block.call(envelope)
 
             if callback_status
