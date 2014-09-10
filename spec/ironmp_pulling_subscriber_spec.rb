@@ -29,7 +29,7 @@ describe RailsPipeline::IronmqPullingSubscriber do
 
                 before(:each) do
                     subject.activate_subscription
-                    subject.process_message(malformed_message,successful_proc)
+                    expect {subject.process_message(malformed_message,successful_proc)}.to raise_error
                 end
 
                 it "does not delete the message" do

@@ -32,8 +32,9 @@ module RailsPipeline
                     envelope = generate_envelope(payload)
 
                     handle_envelope(envelope,message,&block)
-                rescue Exception
+                rescue Exception => e
                     deactivate_subscription
+                    raise e
                 end
             end
         end
