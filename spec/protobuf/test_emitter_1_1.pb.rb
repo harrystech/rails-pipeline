@@ -12,6 +12,7 @@ class TestEmitter_1_1 < ::ProtocolBuffers::Message
   required :int32, :id, 1
   required :string, :foo, 2
   optional :string, :extrah, 3
-  optional :double, :created_at, 4
+  optional :int32, :created_at, 4
+  optional :int32, :updated_at, 5
 end
 
