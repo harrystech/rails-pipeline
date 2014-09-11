@@ -7,10 +7,7 @@ describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
     let(:subscriber) { TestSubscriber.new }
     let(:test_message) { test_model.create_message("1_1", event) }
     let(:clazz) { Object.const_get(test_message.type_info) }
-
     let(:payload_str) { subscriber.class.decrypt(test_message) }
-    #let(:clazz) { Object.const_get(test_message.type_info) }
-
     let(:payload) { clazz.parse(payload_str) }
     let(:handler) {
       RailsPipeline::SubscriberHandler::ActiveRecordCRUD.new(
@@ -40,14 +37,18 @@ describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
         new_object.foo.should eq('bar')
       end
 
-      it "should log if creation failed" do
-        TestModelWithTable.create({id: 42}, without_protection: true)
-        RailsPipeline.logger.should_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
-        handler.handle_payload
-      end
+      context "when a creation request has been received for a record that exists " do
+          let(:test_model) {TestModelWithTable.new({id: 42, foo: 'bar'}, without_protection: true)}
+          before :each do
+              TestModelWithTable.create!({id: 42, foo: 'baz'}, without_protection: true)
+          end
 
-      context "when a creation request has been received after " do
-          it "should not be applied"
+          it "should not be applied" do
+              new_object = handler.handle_payload
+              new_object.should be_persisted
+              new_object.id.should eq(42)
+              new_object.foo.should eq('baz')
+          end
       end
 
     end
@@ -65,11 +66,7 @@ describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
         object.foo.should eq('qux')
       end
 
-      it "should log if update failed" #do
-        #pending "A new failure scenario is now needed"
-        #RailsPipeline.logger.should_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
-        #handler.handle_payload
-      #end
+      it "should log if update failed"
 
       context "when an update is received prior to the record existing" do
           let(:test_model) { TestModelWithTable.new({id: 77, foo: 'baz'}, without_protection: true) }
@@ -88,43 +85,18 @@ describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
       end
 
       context "when an update is received but it is older than the existing record" do
-          let(:subscriber) { TestSubscriber.new }
-          let(:test_message) { test_model.create_message("1_1", event) }
-          let(:clazz) { Object.const_get(test_message.type_info) }
-
-          let(:payload_str) { subscriber.class.decrypt(test_message) }
-          #let(:clazz) { Object.const_get(test_message.type_info) }
-
-          let(:payload) { clazz.parse(payload_str) }
-          let(:handler) {
-              RailsPipeline::SubscriberHandler::ActiveRecordCRUD.new(
-                  payload, target_class: subscriber.target_class(payload), event_type: event)
-          }
-
-
-
-
-          let(:test_model) { TestModelWithTable.new({id: 88, foo: 'bar'}, without_protection: true) }
-
           before(:each) do
-              test_model.save!
+              TestModelWithTable.create!({id: 88, foo: 'bar'}, without_protection: true)
           end
+          let(:test_model) { TestModelWithTable.new({id: 88, foo: 'back to the future', updated_at: Time.now.to_i}, without_protection: true) }
 
           it "should not apply the out of date update to the record" do
-              #test_model.save!
-
-              puts "this is our test payload"
-              puts payload.inspect
-              puts "this is our test payload"
-
-
-
               Timecop.freeze(Date.today - 30) do
-                  test_model.foo = "back to the future"
+                  test_model = TestModelWithTable.find_by_id(88)
                   test_model.save
-                  puts "we are inside of the history  block"
+                  object = handler.handle_payload
+                  expect(object.foo).to eq "bar"
               end
-
           end
       end
     end
@@ -139,10 +111,10 @@ describe RailsPipeline::SubscriberHandler::ActiveRecordCRUD do
         object.should be_destroyed
       end
 
-      it "should log if update failed" do
-        RailsPipeline.logger.should_receive(:error).with("Could not handle payload: #{payload.inspect}, event_type: #{event}")
-        handler.handle_payload
+      it "should raise an exception if the deletion failed" do
+        expect{ handler.handle_payload }.to raise_exception
       end
+
     end
   end
 
