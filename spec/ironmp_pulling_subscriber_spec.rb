@@ -43,7 +43,7 @@ describe RailsPipeline::IronmqPullingSubscriber do
         end
     end
 
-    describe "#handle_envelope" do
+    describe "#process_envelope" do
         let(:failing_proc){Proc.new{false}}
         let(:successful_proc){Proc.new{true}}
         let(:test_envelope){double("envelope")}
@@ -51,14 +51,14 @@ describe RailsPipeline::IronmqPullingSubscriber do
 
         context "when the block passed returns true" do
             it "deletes the passed message" do
-                subject.handle_envelope(test_envelope, message, successful_proc)
+                subject.process_envelope(test_envelope, message, successful_proc)
                 expect(message).to have_received(:delete)
             end
         end
 
         context "when the block passeed returns false" do
             it "does not delete the passed message" do
-                subject.handle_envelope(test_envelope, message, failing_proc)
+                subject.process_envelope(test_envelope, message, failing_proc)
                 expect(message).to_not have_received(:delete)
             end
         end
