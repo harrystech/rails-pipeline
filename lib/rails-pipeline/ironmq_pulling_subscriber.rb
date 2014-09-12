@@ -34,6 +34,7 @@ module RailsPipeline
                     process_envelope(envelope, message, block)
                 rescue Exception => e
                     deactivate_subscription
+                    RailsPipeline.logger.error "#{message.id} was unable to be processed as was not removed from the queue."
                     raise e
                 end
             end
