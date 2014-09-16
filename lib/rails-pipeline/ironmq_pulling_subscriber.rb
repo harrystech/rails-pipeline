@@ -25,9 +25,6 @@ module RailsPipeline
 
         def process_message(message, block)
             if JSON.parse(message.body).empty?
-                puts "the following message is said to be nil by iron mq #{message.id}"
-                puts message.inspect
-
                 deactivate_subscription
             else
                 begin
@@ -36,9 +33,8 @@ module RailsPipeline
 
                     process_envelope(envelope, message, block)
                 rescue Exception => e
-                    #deactivate_subscription
                     RailsPipeline.logger.error "#{message.id} was unable to be processed as was not removed from the queue."
-                    #raise e
+                    RailsPipeline.logger.error message.body
                 end
             end
         end

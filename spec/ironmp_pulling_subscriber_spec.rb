@@ -15,14 +15,16 @@ describe RailsPipeline::IronmqPullingSubscriber do
     end
 
     describe "#process_message" do
-        context "when receiving a nil message" do
+        context "when receiving an empty message" do
+            let(:empty_message){double("message", :body => "[]", :delete => "a fine deletion implementation")}
+
             it "deactivates the current subscription" do
-                subject.process_message(nil,successful_proc)
+                subject.process_message(empty_message, successful_proc)
                 expect(subject.active_subscription?).to eql false
             end
         end
 
-        context "when receiving a non-nil message" do
+        context "when receiving a non-empty  message" do
             context "when an issue occurs while generating an message envelope" do
                 let(:malformed_message){double("message", :body => "a malformed message",
                                                :delete => "a fine deletion implementation")}
@@ -36,8 +38,8 @@ describe RailsPipeline::IronmqPullingSubscriber do
                     expect(malformed_message).to_not have_received(:delete)
                 end
 
-                it "deactivates the subscription" do
-                    expect(subject.active_subscription?).to eql false
+                it "does not deactivate the subscription" do
+                    expect(subject.active_subscription?).to eql true
                 end
             end
         end
