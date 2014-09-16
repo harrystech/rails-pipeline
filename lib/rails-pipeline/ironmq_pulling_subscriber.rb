@@ -24,19 +24,19 @@ module RailsPipeline
 
 
         def process_message(message, block)
-            if message.nil? || JSON.parse(message.body).empty?
-                deactivate_subscription
-            else
-                begin
+            begin
+                if message.nil? || JSON.parse(message.body).empty?
+                    deactivate_subscription
+                else
                     payload = parse_ironmq_payload(message.body)
                     envelope = generate_envelope(payload)
 
                     process_envelope(envelope, message, block)
-                rescue Exception => e
-                    deactivate_subscription
-                    RailsPipeline.logger.error "#{message.id} was unable to be processed as was not removed from the queue."
-                    raise e
                 end
+            rescue Exception => e
+                deactivate_subscription
+                RailsPipeline.logger.error "#{message.id} was unable to be processed as was not removed from the queue."
+                raise e
             end
         end
 
