@@ -24,7 +24,7 @@ module RailsPipeline
 
 
         def process_message(message, block)
-            if JSON.parse(message.body).empty?
+            if message.nil? || JSON.parse(message.body).empty?
                 deactivate_subscription
             else
                 begin
