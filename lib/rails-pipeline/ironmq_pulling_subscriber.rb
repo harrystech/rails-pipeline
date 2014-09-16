@@ -24,7 +24,7 @@ module RailsPipeline
 
 
         def process_message(message, block)
-            if message.nil?
+            if JSON.parse(message.body).empty?
                 puts "the following message is said to be nil by iron mq #{message.id}"
                 puts message.inspect
 
