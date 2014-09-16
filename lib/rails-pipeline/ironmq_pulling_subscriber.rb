@@ -12,11 +12,11 @@ module RailsPipeline
             @subscription_status = false
         end
 
-        def start_subscription(&block)
+        def start_subscription(wait_time=2, &block)
             activate_subscription
 
             while active_subscription?
-                pull_message do |message|
+                pull_message(wait_time) do |message|
                     process_message(message, block)
                 end
             end
@@ -64,9 +64,9 @@ module RailsPipeline
         #the wait time on this may need to be changed
         #haven't seen rate limit info on these calls but didnt look
         #all that hard either.
-        def pull_message
+        def pull_message(wait_time)
             queue = _iron.queue(queue_name)
-            yield queue.get(:wait => 2)
+            yield queue.get(:wait => wait_time)
         end
 
         private
