@@ -12,12 +12,15 @@ module RailsPipeline
             @subscription_status = false
         end
 
-        def start_subscription(wait_time=2, &block)
+        # Valid Parameters at this time are 
+        # wait_time - An integer indicating how long in seconds we should long poll on empty queues
+        # halt_on_error - A boolean indicating if we should stop our queue subscription if an error occurs
+        def start_subscription(params={wait_time: 2, halt_on_error: true}, &block)
             activate_subscription
 
             while active_subscription?
-                pull_message(wait_time) do |message|
-                    process_message(message, block)
+                pull_message(params[:wait_time]) do |message|
+                    process_message(message, params[:halt_on_error], block)
                 end
             end
         end
