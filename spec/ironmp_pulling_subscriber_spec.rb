@@ -17,7 +17,7 @@ describe RailsPipeline::IronmqPullingSubscriber do
     describe "#process_message" do
         context "when receiving a nil message" do
             it "deactivates the current subscription" do
-                subject.process_message(nil,successful_proc)
+                subject.process_message(nil, true, successful_proc)
                 expect(subject.active_subscription?).to eql false
             end
         end
@@ -29,7 +29,7 @@ describe RailsPipeline::IronmqPullingSubscriber do
 
                 before(:each) do
                     subject.activate_subscription
-                    expect {subject.process_message(malformed_message,successful_proc)}.to raise_error
+                    expect {subject.process_message(malformed_message, true, successful_proc)}.to raise_error
                 end
 
                 it "does not delete the message" do

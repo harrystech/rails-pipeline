@@ -23,7 +23,7 @@ module RailsPipeline
         end
 
 
-        def process_message(message, block)
+        def process_message(message, halt_on_error, block)
             begin
                 if message.nil? || JSON.parse(message.body).empty?
                     deactivate_subscription
@@ -34,8 +34,12 @@ module RailsPipeline
                     process_envelope(envelope, message, block)
                 end
             rescue Exception => e
-                deactivate_subscription
-                RailsPipeline.logger.error "#{message.id} was unable to be processed as was not removed from the queue."
+                if halt_on_error
+                    deactivate_subscription
+                end
+
+                RailsPipeline.logger.error "A message was unable to be processed as was not removed from the queue."
+                RailsPipeline.logger.error "The message: #{message.inspect}"
                 raise e
             end
         end
