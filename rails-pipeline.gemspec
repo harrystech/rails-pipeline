@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency "redis"
   s.add_dependency "iron_mq"
   s.add_dependency "aws-sdk"
-  s.add_dependency "ruby-protocol-buffers"
+  s.add_dependency "ruby-protocol-buffers", "~> 1.5.1"
   s.add_dependency "sinatra"
 
 end
