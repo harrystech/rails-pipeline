@@ -10,7 +10,7 @@ module RailsPipeline
       RailsPipeline::SymmetricEncryptor.included(base)
       base.send :include, InstanceMethods
       base.extend ClassMethods
-      base.after_commit :emit_on_create, on: :create
+      base.after_commit :emit_on_create, on: :create, if: :persisted?
       base.after_commit :emit_on_update, on: :update
       base.after_commit :emit_on_destroy, on: :destroy
 
