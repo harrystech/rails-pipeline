@@ -72,7 +72,7 @@ module RailsPipeline
           owner_info: owner_info,
           type_info: type_info,
           topic: topic,
-          event_type: _event_type_value(event_type),
+          event_type: event_type,
           api_key: _api_key,
         )
       end
@@ -109,17 +109,6 @@ module RailsPipeline
         key_len = 32
         key = OpenSSL::PKCS5.pbkdf2_hmac_sha1(_secret, salt, iter, key_len)
         return key
-      end
-
-      def _event_type_value(event_type)
-        case event_type
-        when :create
-          RailsPipeline::EncryptedMessage::EventType::CREATED
-        when :update
-          RailsPipeline::EncryptedMessage::EventType::UPDATED
-        when :destroy
-          RailsPipeline::EncryptedMessage::EventType::DELETED
-        end
       end
 
     end

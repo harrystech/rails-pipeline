@@ -22,15 +22,15 @@ module RailsPipeline
 
     module InstanceMethods
       def emit_on_create
-        emit(:create)
+        emit(RailsPipeline::EncryptedMessage::EventType::CREATED)
       end
 
       def emit_on_update
-        emit(:update)
+        emit(RailsPipeline::EncryptedMessage::EventType::UPDATED)
       end
 
       def emit_on_destroy
-        emit(:destroy)
+        emit(RailsPipeline::EncryptedMessage::EventType::DELETED)
       end
 
       def emit(event_type = RailsPipeline::EncryptedMessage::EventType::CREATED)
