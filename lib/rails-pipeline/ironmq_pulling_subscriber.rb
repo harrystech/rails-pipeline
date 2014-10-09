@@ -12,15 +12,32 @@ module RailsPipeline
             @subscription_status = false
         end
 
-        # Valid Parameters at this time are 
-        # wait_time - An integer indicating how long in seconds we should long poll on empty queues
+        # Valid Parameters at this time are
+        # wait_time - An integer indicating how long in seconds we should long poll IronMQ on empty queues
+        # interval - An integer indicating how many seconds we should wait between checking for checking for new messages.
         # halt_on_error - A boolean indicating if we should stop our queue subscription if an error occurs
-        def start_subscription(params={wait_time: 2, halt_on_error: true}, &block)
+        # halt_on_empty - A boolean indicating whether or not we should stop our queue subscription if we find the queue is empty.
+        #                 The `interval` argument is ignored if this is true because subscription ends immediately if there are no
+        #                 new messages.
+        def start_subscription(params={}, &block)
+            wait_time = params[:wait_time] || 2
+            interval = params[:interval] || 1
+            halt_on_error = params[:halt_on_error].nil? ? true : params[:halt_on_error]
+            halt_on_empty = params[:halt_on_empty].nil? ? true : params[:halt_on_empty]
+
             activate_subscription
 
             while active_subscription?
-                pull_message(params[:wait_time]) do |message|
-                    process_message(message, params[:halt_on_error], block)
+                pull_message(wait_time) do |message|
+                    if (message.nil? || JSON.parse(message.body).empty?)
+                        if halt_on_empty
+                            deactivate_subscription
+                        else
+                            sleep(interval)
+                        end
+                    else
+                        process_message(message, halt_on_error, block)
+                    end
                 end
             end
         end
@@ -28,14 +45,9 @@ module RailsPipeline
 
         def process_message(message, halt_on_error, block)
             begin
-                if message.nil? || JSON.parse(message.body).empty?
-                    deactivate_subscription
-                else
-                    payload = parse_ironmq_payload(message.body)
-                    envelope = generate_envelope(payload)
-
-                    process_envelope(envelope, message, block)
-                end
+                payload = parse_ironmq_payload(message.body)
+                envelope = generate_envelope(payload)
+                process_envelope(envelope, message, block)
             rescue Exception => e
                 if halt_on_error
                     deactivate_subscription
@@ -67,10 +79,6 @@ module RailsPipeline
             end
         end
 
-
-        #the wait time on this may need to be changed
-        #haven't seen rate limit info on these calls but didnt look
-        #all that hard either.
         def pull_message(wait_time)
             queue = _iron.queue(queue_name)
             yield queue.get(:wait => wait_time)
