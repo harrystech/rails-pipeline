@@ -1,5 +1,6 @@
 require 'base64'
 require 'json'
+require "benchmark"
 
 module RailsPipeline
     class IronmqPullingSubscriber
@@ -10,6 +11,27 @@ module RailsPipeline
         def initialize(queue_name)
             @queue_name  = queue_name
             @subscription_status = false
+        end
+
+        # For params, see start_subscription
+        def run(params={})
+            # TODO: Trap OS signals and handle them properly.
+            start_subscription(params) do |envelope|
+                begin
+                    time = Benchmark.realtime do
+                        handle_envelope(envelope)
+                    end
+
+                    topic = envelope.topic
+                    RailsPipeline.logger.debug "Consuming from IronMQ: #{topic} took #{time* 1000} milliseconds."
+
+                    true
+                rescue StandardError => e
+                    RailsPipeline.logger.error e.message
+                    RailsPipeline.logger.error e.backtrace.join("\n")
+                    false
+                end
+            end
         end
 
         # Valid Parameters at this time are
