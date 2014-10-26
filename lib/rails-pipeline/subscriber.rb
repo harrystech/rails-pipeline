@@ -1,4 +1,3 @@
-
 require "rails-pipeline/symmetric_encryptor"
 
 module RailsPipeline
@@ -27,6 +26,9 @@ module RailsPipeline
         @@registered_handlers[payload_class]
       end
 
+      def registered_handlers
+        @@registered_handlers
+      end
     end
 
 
@@ -53,13 +55,18 @@ module RailsPipeline
         end
         verify_api_key(envelope)
         payload_str = self.class.decrypt(envelope)
-        begin
-          clazz = Object.const_get(envelope.type_info)
-        rescue NameError
-          RailsPipeline.logger.info "Dropping unknown message #{envelope.type_info}"
+
+        # Find the registered minor version & its related handler to parse and
+        # process this message.
+        clazz = registered_class_on_same_major_version(envelope.type_info)
+
+        if clazz.nil?
+          # No compatible version of this message is registered for this app.
+          RailsPipeline.logger.info "Dropping unclaimed message #{envelope.type_info} (no compatible version registered)."
           return
         end
 
+        # Parse and handle the payload.
         payload = clazz.parse(payload_str)
         handle_payload(payload, envelope)
       end
@@ -73,11 +80,6 @@ module RailsPipeline
         event_type = envelope.event_type
         method = most_suitable_handler_method_name(version, clazz)
 
-        if clazz.nil?
-          # This message type is not registered for this app
-          RailsPipeline.logger.info "Dropping unclaimed message #{payload.class.name}"
-          return
-        end
         if clazz.is_a?(Class)
           if handler_class
             # If a built in handler_class is registered, then just use it
@@ -91,6 +93,34 @@ module RailsPipeline
           return target
         elsif clazz.is_a?(Proc)
           return clazz.call(payload)
+        end
+      end
+
+      def registered_class_on_same_major_version(payload_class_name)
+        if Subscriber.registered_handlers.has_key?(payload_class_name)
+          # The version we've been given has been registered. Return that.
+          return Object.const_get(payload_class_name)
+        end
+
+        # Lops off the minor version from the payload class name so
+        # we can find the registered message type with the same major version.
+        class_name_with_major_version =
+          payload_class_name
+          .split("_", 3)[0, 2]
+          .join("_")
+
+        # Look for message types with the same major version.
+        available_classes = Subscriber.registered_handlers
+          .keys
+          .map(&:to_s)
+          .select { |class_name| class_name.start_with?(class_name_with_major_version) }
+
+        if available_classes.empty?
+          # No message types with the same major version.
+          return nil
+        else
+          # There's a message type with the same major version.
+          return Object.const_get(available_classes.first)
         end
       end
 
@@ -142,7 +172,6 @@ module RailsPipeline
     end
 
     module ClassMethods
-
 
       def handler_method_cache
         @handler_method_cache ||= {}
