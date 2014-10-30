@@ -12,9 +12,28 @@ describe RailsPipeline::Subscriber do
     OtherSubscriber.handler_method_cache = {}
   end
 
-  it "should handle correct messages" do
-    expect(@subscriber).to receive(:handle_payload).once
-    @subscriber.handle_envelope(@test_message)
+
+  context "when there is no compatible version registered for the message" do
+      before do
+        RailsPipeline::Subscriber.register(TestEmitter_2_0, TestModel)
+      end
+
+      it "should handle correct messages" do
+          expect(@subscriber).to receive(:handle_payload).once
+          @subscriber.handle_envelope(@test_message)
+      end
+  end
+
+  context "when there is a compatible version registered for the message" do
+      before do
+          @test_emitter = TestEmitter.new({foo: "bar"}, without_protection: true)
+          RailsPipeline::Subscriber.stub(:registered_handlers){{}}
+      end
+
+      it "should log the inability to process the message" do
+          expect(RailsPipeline.logger).to receive(:info).once
+          @subscriber.handle_envelope(@test_message)
+      end
   end
 
   it "should raise exception on malformed messages" do
