@@ -25,6 +25,11 @@ describe RailsPipeline::Subscriber do
   end
 
   context "when there is a compatible version registered for the message" do
+      before do
+          @test_emitter = TestEmitter.new({foo: "bar"}, without_protection: true)
+          RailsPipeline::Subscriber.stub(:registered_handlers){{}}
+      end
+
       it "should log the inability to process the message" do
           expect(RailsPipeline.logger).to receive(:info).once
           @subscriber.handle_envelope(@test_message)
