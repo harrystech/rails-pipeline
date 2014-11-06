@@ -10,9 +10,15 @@ module RailsPipeline
       RailsPipeline::SymmetricEncryptor.included(base)
       base.send :include, InstanceMethods
       base.extend ClassMethods
-      base.after_commit :emit_on_create, on: :create, if: :persisted?
-      base.after_commit :emit_on_update, on: :update
-      base.after_commit :emit_on_destroy, on: :destroy
+      if Rails.env.test?
+        base.after_create :emit_on_create, on: :create, if: :persisted?
+        base.after_update :emit_on_update, on: :update
+        base.after_destroy :emit_on_destroy, on: :destroy
+      else
+        base.after_commit :emit_on_create, on: :create, if: :persisted?
+        base.after_commit :emit_on_update, on: :update
+        base.after_commit :emit_on_destroy, on: :destroy
+      end
 
       if RailsPipeline::HAS_NEWRELIC
         base.send :include, ::NewRelic::Agent::MethodTracer
