@@ -22,6 +22,7 @@ module RailsPipeline
 end
 
 require "rails-pipeline/emitter"
+require "rails-pipeline/basic_emitter"
 require "rails-pipeline/subscriber"
 require "rails-pipeline/symmetric_encryptor"
 require "rails-pipeline/redis_publisher"
