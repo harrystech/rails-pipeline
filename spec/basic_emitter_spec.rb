@@ -1,33 +1,27 @@
 require 'spec_helper'
 
 describe RailsPipeline::BasicEmitter do
+    let(:payload){{
+        :topic => "test_message",
+        :type_info =>  "some_type",
+        :payload =>  "an old fashion payload",
+        :version => "1.0",
+        :event_type => RailsPipeline::EncryptedMessage::EventType::CREATED}}
+
+    let(:publisher){double("A very fancy publisher")}
 
     describe ".emit" do
         context "during normal circumstances" do
-            let(:publisher){double("A very fancy publisher")}
-
-
             it "should publish a message" do
                 publisher.should_receive :publish
-                RailsPipeline::BasicEmitter.emit("test_message",
-                                                 "some_type",
-                                                 "an old fashion payload",
-                                                 "1.0",
-                                                 RailsPipeline::EncryptedMessage::EventType::CREATED,
-                                                 publisher)
-
+                RailsPipeline::BasicEmitter.emit(payload, publisher)
             end
         end
     end
 
     describe ".create_message" do
         it "returns an encrypted version of the message" do
-            result  = RailsPipeline::BasicEmitter.create_message("test_message",
-                                                       "some_type",
-                                                       "an old fashion payload",
-                                                       "1.0",
-                                                       RailsPipeline::EncryptedMessage::EventType::CREATED)
-
+            result  = RailsPipeline::BasicEmitter.create_message(payload)
             expect(result.is_a? RailsPipeline::EncryptedMessage).to eql(true)
         end
     end
