@@ -13,8 +13,7 @@ RailsPipeline::logger = log
 # Pipeline forwarder that reads from redis queue and forwards to ironmq.
 $redis = ENV["REDISCLOUD_URL"] || ENV["REDISTOGO_URL"] || "localhost:6379"
 
-# TODO: non-hardcode this
-key = "pipeline"
+key = ARGV[0] || "harrys-www-pipeline"
 
 forwarder = RailsPipeline::RedisIronmqForwarder.new(key)
 forwarder.start
