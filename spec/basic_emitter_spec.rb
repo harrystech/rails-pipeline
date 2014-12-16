@@ -22,7 +22,7 @@ describe RailsPipeline::BasicEmitter do
     describe ".create_message" do
         it "returns an encrypted version of the message" do
             result  = RailsPipeline::BasicEmitter.create_message(payload)
-            expect(result.is_a? RailsPipeline::EncryptedMessage).to eql(true)
+            expect(result).to be_a(RailsPipeline::EncryptedMessage)
         end
     end
 end
