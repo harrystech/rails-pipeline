@@ -22,7 +22,10 @@ module RailsPipeline::IronmqPublisher
       t1 = Time.now
       ::NewRelic::Agent.record_metric('Pipeline/IronMQ/publish', t1-t0) if RailsPipeline::HAS_NEWRELIC
 
-      RailsPipeline.logger.debug "Published Message id: #{response.id}"
+      if response.respond_to?(:id)
+          RailsPipeline.logger.debug "Published Message id: #{response.id}"
+      end
+
       RailsPipeline.logger.debug "Publishing to IronMQ: #{topic_name} took #{t1-t0}s"
     end
 
