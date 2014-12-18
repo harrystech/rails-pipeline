@@ -38,16 +38,19 @@ module RailsPipeline
           RailsPipeline.logger.debug "Skipping outgoing pipeline messages (disabled by env vars)"
           return
         end
-        begin
-          self.class.pipeline_versions.each do |version|
-            enc_data = create_message(version, event_type)
-            self.publish(enc_data.topic, enc_data.to_s)
-          end
-        rescue Exception => e
-          RailsPipeline.logger.error("Error during emit(): #{e}")
-          puts e.backtrace.join("\n")
-          raise e
+        self.class.pipeline_versions.each do |version|
+          enc_data = create_message(version, event_type)
+          self.publish(enc_data.topic, enc_data.to_s)
         end
+      rescue Exception => e
+        handle_emit_exception(e)
+      end
+
+      # This is mostly defined as a separate method so that we can catch it being called from within rspec tests.
+      def handle_emit_exception(e)
+        RailsPipeline.logger.error("Error during emit(): #{e}")
+        puts e.backtrace.join("\n")
+        raise e  # this probably isn't going anywhere BTW
       end
 
       def create_message(version, event_type)
