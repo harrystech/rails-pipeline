@@ -43,6 +43,27 @@ RSpec.configure do |config|
       c.syntax = [:should, :expect]
     end
 
+    config.before(:each) do
+      # Set up a fail handler for all emitters
+      $failed_emit = false
+      ObjectSpace.each_object(Class).each do |klass|
+        if klass.instance_methods.include?(:emit)
+          allow_any_instance_of(klass).to receive(:handle_emit_exception) { |e|
+            $failed_emit = true
+            RailsPipeline.logger.error("Error during emit(): #{e}")
+            puts e.backtrace.join("\n")
+          }
+        end
+      end
+    end
+    config.after(:each) do
+      if $failed_emit
+        fail "Pipeline emitter threw an exception"
+      end
+    end
+
+
+
     # rspec-mocks config goes here. You can use an alternate test double
     # library (such as bogus or mocha) by changing the `mock_with` option here.
     config.mock_with :rspec do |mocks|

@@ -10,15 +10,9 @@ module RailsPipeline
       RailsPipeline::SymmetricEncryptor.included(base)
       base.send :include, InstanceMethods
       base.extend ClassMethods
-      if Rails.env.test?
-        base.after_create :emit_on_create, on: :create, if: :persisted?
-        base.after_update :emit_on_update, on: :update
-        base.after_destroy :emit_on_destroy, on: :destroy
-      else
-        base.after_commit :emit_on_create, on: :create, if: :persisted?
-        base.after_commit :emit_on_update, on: :update
-        base.after_commit :emit_on_destroy, on: :destroy
-      end
+      base.after_commit :emit_on_create, on: :create, if: :persisted?
+      base.after_commit :emit_on_update, on: :update
+      base.after_commit :emit_on_destroy, on: :destroy
 
       if RailsPipeline::HAS_NEWRELIC
         base.send :include, ::NewRelic::Agent::MethodTracer
@@ -44,16 +38,19 @@ module RailsPipeline
           RailsPipeline.logger.debug "Skipping outgoing pipeline messages (disabled by env vars)"
           return
         end
-        begin
-          self.class.pipeline_versions.each do |version|
-            enc_data = create_message(version, event_type)
-            self.publish(enc_data.topic, enc_data.to_s)
-          end
-        rescue Exception => e
-          RailsPipeline.logger.error("Error during emit(): #{e}")
-          puts e.backtrace.join("\n")
-          raise e
+        self.class.pipeline_versions.each do |version|
+          enc_data = create_message(version, event_type)
+          self.publish(enc_data.topic, enc_data.to_s)
         end
+      rescue Exception => e
+        handle_emit_exception(e)
+      end
+
+      # This is mostly defined as a separate method so that we can catch it being called from within rspec tests.
+      def handle_emit_exception(e)
+        RailsPipeline.logger.error("Error during emit(): #{e}")
+        puts e.backtrace.join("\n")
+        raise e  # this probably isn't going anywhere BTW
       end
 
       def create_message(version, event_type)
